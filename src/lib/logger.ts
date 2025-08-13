@@ -148,52 +148,115 @@ export class Logger {
   /**
    * 디버그 로그
    */
-  debug(category: LogCategory, message: string, data?: any, userId?: string): void {
-    this.log(LogLevel.DEBUG, category, message, data, userId);
+  debug(category: LogCategory, message: string, data?: any, userId?: string): void;
+  debug(message: string, data?: any): void;
+  debug(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+    if (typeof arg1 === 'string') {
+      // 카테고리 생략 호출 지원
+      this.log(LogLevel.DEBUG, LogCategory.SYSTEM, arg1, arg2);
+    } else {
+      this.log(LogLevel.DEBUG, arg1 as LogCategory, arg2 as string, arg3, arg4);
+    }
   }
 
   /**
    * 정보 로그
    */
-  info(category: LogCategory, message: string, data?: any, userId?: string): void {
-    this.log(LogLevel.INFO, category, message, data, userId);
+  info(category: LogCategory, message: string, data?: any, userId?: string): void;
+  info(message: string, data?: any): void;
+  info(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+    if (typeof arg1 === 'string') {
+      this.log(LogLevel.INFO, LogCategory.SYSTEM, arg1, arg2);
+    } else {
+      this.log(LogLevel.INFO, arg1 as LogCategory, arg2 as string, arg3, arg4);
+    }
   }
 
   /**
    * 경고 로그
    */
-  warn(category: LogCategory, message: string, data?: any, userId?: string): void {
-    this.log(LogLevel.WARN, category, message, data, userId);
+  warn(category: LogCategory, message: string, data?: any, userId?: string): void;
+  warn(message: string, data?: any): void;
+  warn(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+    if (typeof arg1 === 'string') {
+      this.log(LogLevel.WARN, LogCategory.SYSTEM, arg1, arg2);
+    } else {
+      this.log(LogLevel.WARN, arg1 as LogCategory, arg2 as string, arg3, arg4);
+    }
   }
 
   /**
    * 에러 로그
    */
-  error(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void {
-    const logData = {
-      ...(data || {}),
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : undefined
-    };
-    this.log(LogLevel.ERROR, category, message, logData, userId);
+  error(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void;
+  error(message: string, error?: Error, data?: any): void;
+  error(arg1: any, arg2?: any, arg3?: any, arg4?: any, arg5?: any): void {
+    if (typeof arg1 === 'string') {
+      const message = arg1 as string;
+      const error = arg2 as Error | undefined;
+      const data = arg3;
+      const logData = {
+        ...(data || {}),
+        error: error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      };
+      this.log(LogLevel.ERROR, LogCategory.SYSTEM, message, logData);
+    } else {
+      const category = arg1 as LogCategory;
+      const message = arg2 as string;
+      const error = arg3 as Error | undefined;
+      const data = arg4;
+      const userId = arg5 as string | undefined;
+      const logData = {
+        ...(data || {}),
+        error: error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      };
+      this.log(LogLevel.ERROR, category, message, logData, userId);
+    }
   }
 
   /**
    * 크리티컬 로그
    */
-  critical(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void {
-    const logData = {
-      ...(data || {}),
-      error: error ? {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      } : undefined
-    };
-    this.log(LogLevel.CRITICAL, category, message, logData, userId);
+  critical(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void;
+  critical(message: string, error?: Error, data?: any): void;
+  critical(arg1: any, arg2?: any, arg3?: any, arg4?: any, arg5?: any): void {
+    if (typeof arg1 === 'string') {
+      const message = arg1 as string;
+      const error = arg2 as Error | undefined;
+      const data = arg3;
+      const logData = {
+        ...(data || {}),
+        error: error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      };
+      this.log(LogLevel.CRITICAL, LogCategory.SYSTEM, message, logData);
+    } else {
+      const category = arg1 as LogCategory;
+      const message = arg2 as string;
+      const error = arg3 as Error | undefined;
+      const data = arg4;
+      const userId = arg5 as string | undefined;
+      const logData = {
+        ...(data || {}),
+        error: error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      };
+      this.log(LogLevel.CRITICAL, category, message, logData, userId);
+    }
   }
 
   /**

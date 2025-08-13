@@ -1,527 +1,373 @@
-import { Player, LevelSystem, Stats } from '../types/player';
-import { playerManager } from './playerManager';
-import { gameDataManager } from './gameDataManager';
+import { Player, Stats } from '@/types/game';
+import { logger } from './logger';
 
-export interface ExperienceGain {
-  source: 'combat' | 'quest' | 'skill' | 'craft' | 'exploration' | 'event';
-  baseAmount: number;
-  multiplier: number;
-  bonus: number;
-  finalAmount: number;
-  description: string;
+// 무한 레벨업 공식 설정
+interface LevelConfig {
+  baseExperience: number; // 레벨 1에서 2로 가는 기본 경험치
+  exponentialBase: number; // 지수 증가율
+  linearMultiplier: number; // 선형 증가율
+  scalingFactor: number; // 후반 스케일링 팩터
 }
 
-export interface LevelUpReward {
-  statPoints: number;
-  skillPoints: number;
-  bonusRewards?: {
-    gold?: number;
-    items?: Array<{ itemId: string; quantity: number; }>;
-    unlockFeatures?: string[];
-  };
+const DEFAULT_LEVEL_CONFIG: LevelConfig = {
+  baseExperience: 100,
+  exponentialBase: 1.15, // 15% 지수 증가
+  linearMultiplier: 50,   // 레벨당 50 추가 경험치
+  scalingFactor: 1.02     // 레벨 100 이후 추가 스케일링
+};
+
+// 레벨별 스탯 증가 설정
+interface StatGrowthConfig {
+  baseStatPerLevel: number; // 레벨당 기본 스탯 증가
+  statChoiceBonus: number;  // 선택한 스탯에 대한 추가 보너스
+  milestoneBonus: number;   // 마일스톤 레벨에서의 보너스
+  milestoneInterval: number; // 마일스톤 간격 (예: 10레벨마다)
 }
 
-export interface StatAllocation {
-  str?: number;
-  dex?: number;
-  int?: number;
-  vit?: number;
-  luk?: number;
-}
+const DEFAULT_STAT_GROWTH: StatGrowthConfig = {
+  baseStatPerLevel: 2,    // 레벨당 모든 스탯 +2
+  statChoiceBonus: 3,     // 선택한 스탯 추가 +3
+  milestoneBonus: 5,      // 마일스톤에서 모든 스탯 +5
+  milestoneInterval: 10
+};
 
 export class LevelSystem {
-  private readonly BASE_EXP_REQUIREMENT = 100;
-  private readonly EXP_GROWTH_RATE = 1.2;
-  private readonly MAX_LEVEL = 999999; // 무한 레벨 (실질적 한계)
-  
-  // 레벨별 보상 설정
-  private readonly STAT_POINTS_PER_LEVEL = 5;
-  private readonly SKILL_POINTS_PER_LEVEL = 1;
-  
-  // 경험치 멀티플라이어
-  private readonly EXP_MULTIPLIERS = {
-    combat: 1.0,
-    quest: 1.5,
-    skill: 0.8,
-    craft: 0.6,
-    exploration: 0.4,
-    event: 2.0
-  };
+  private config: LevelConfig;
+  private statGrowth: StatGrowthConfig;
 
-  /**
-   * 플레이어에게 경험치 추가
-   */
-  async addExperience(
-    playerId: string, 
-    baseAmount: number, 
-    source: ExperienceGain['source'],
-    description: string = '',
-    additionalMultiplier: number = 1.0
-  ): Promise<{
-    success: boolean;
-    experienceGain: ExperienceGain;
-    levelsGained: number;
-    newLevel: number;
-    rewards?: LevelUpReward[];
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return {
-          success: false,
-          experienceGain: this.createEmptyExpGain(),
-          levelsGained: 0,
-          newLevel: 0
-        };
-      }
-
-      // 경험치 계산
-      const expGain = this.calculateExperienceGain(
-        baseAmount, 
-        source, 
-        player, 
-        additionalMultiplier, 
-        description
-      );
-
-      const initialLevel = player.level.level;
-      let currentExp = player.level.experience + expGain.finalAmount;
-      let currentLevel = player.level.level;
-      let requiredExp = player.level.experienceToNext;
-
-      const rewards: LevelUpReward[] = [];
-      let levelsGained = 0;
-
-      // 레벨업 처리
-      while (currentExp >= requiredExp && currentLevel < this.MAX_LEVEL) {
-        currentExp -= requiredExp;
-        currentLevel++;
-        levelsGained++;
-
-        // 레벨업 보상 계산
-        const reward = this.calculateLevelUpReward(currentLevel, player);
-        rewards.push(reward);
-
-        // 스탯 포인트 및 스킬 포인트 지급
-        player.level.statPoints += reward.statPoints;
-        player.level.skillPoints += reward.skillPoints;
-
-        // 보너스 보상 적용
-        if (reward.bonusRewards?.gold) {
-          player.gold += reward.bonusRewards.gold;
-        }
-
-        if (reward.bonusRewards?.items) {
-          for (const item of reward.bonusRewards.items) {
-            await playerManager.addItem(playerId, item.itemId, item.quantity);
-          }
-        }
-
-        // 다음 레벨 경험치 요구량 계산
-        requiredExp = this.calculateRequiredExperience(currentLevel);
-      }
-
-      // 플레이어 데이터 업데이트
-      player.level.level = currentLevel;
-      player.level.experience = currentExp;
-      player.level.experienceToNext = requiredExp;
-
-      // 파생 스탯 재계산 (레벨업으로 인한)
-      this.recalculateDerivedStats(player);
-
-      await playerManager.savePlayer(player);
-
-      // 레벨업 알림
-      if (levelsGained > 0) {
-        console.log(`플레이어 ${player.info.characterName}이(가) ${levelsGained}레벨 상승! (${initialLevel} → ${currentLevel})`);
-      }
-
-      return {
-        success: true,
-        experienceGain: expGain,
-        levelsGained,
-        newLevel: currentLevel,
-        rewards: rewards.length > 0 ? rewards : undefined
-      };
-    } catch (error) {
-      console.error(`경험치 추가 실패: ${playerId}`, error);
-      return {
-        success: false,
-        experienceGain: this.createEmptyExpGain(),
-        levelsGained: 0,
-        newLevel: 0
-      };
-    }
+  constructor(config?: Partial<LevelConfig>, statGrowth?: Partial<StatGrowthConfig>) {
+    this.config = { ...DEFAULT_LEVEL_CONFIG, ...config };
+    this.statGrowth = { ...DEFAULT_STAT_GROWTH, ...statGrowth };
   }
 
   /**
-   * 스탯 포인트 할당
+   * 특정 레벨에 도달하기 위해 필요한 총 경험치 계산 (무한 레벨 지원)
    */
-  async allocateStatPoints(
-    playerId: string, 
-    allocation: StatAllocation
-  ): Promise<{
-    success: boolean;
-    message: string;
-    newStats?: Stats;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      // 할당할 포인트 계산
-      const totalPoints = Object.values(allocation).reduce((sum, points) => sum + (points || 0), 0);
-      
-      if (totalPoints <= 0) {
-        return { success: false, message: '할당할 스탯 포인트를 선택해주세요.' };
-      }
-
-      if (totalPoints > player.level.statPoints) {
-        return { 
-          success: false, 
-          message: `스탯 포인트가 부족합니다. (보유: ${player.level.statPoints}, 필요: ${totalPoints})` 
-        };
-      }
-
-      // 각 스탯의 최대값 확인 (레벨 * 10이 상한)
-      const maxStatValue = player.level.level * 10;
-      
-      const newStats = { ...player.stats };
-      
-      if (allocation.str && newStats.str + allocation.str > maxStatValue) {
-        return { success: false, message: `힘 스탯이 상한을 초과합니다. (최대: ${maxStatValue})` };
-      }
-      if (allocation.dex && newStats.dex + allocation.dex > maxStatValue) {
-        return { success: false, message: `민첩 스탯이 상한을 초과합니다. (최대: ${maxStatValue})` };
-      }
-      if (allocation.int && newStats.int + allocation.int > maxStatValue) {
-        return { success: false, message: `지능 스탯이 상한을 초과합니다. (최대: ${maxStatValue})` };
-      }
-      if (allocation.vit && newStats.vit + allocation.vit > maxStatValue) {
-        return { success: false, message: `체력 스탯이 상한을 초과합니다. (최대: ${maxStatValue})` };
-      }
-      if (allocation.luk && newStats.luk + allocation.luk > maxStatValue) {
-        return { success: false, message: `운 스탯이 상한을 초과합니다. (최대: ${maxStatValue})` };
-      }
-
-      // 스탯 적용
-      if (allocation.str) newStats.str += allocation.str;
-      if (allocation.dex) newStats.dex += allocation.dex;
-      if (allocation.int) newStats.int += allocation.int;
-      if (allocation.vit) newStats.vit += allocation.vit;
-      if (allocation.luk) newStats.luk += allocation.luk;
-
-      // 플레이어 데이터 업데이트
-      player.stats = newStats;
-      player.level.statPoints -= totalPoints;
-
-      // 파생 스탯 재계산
-      this.recalculateDerivedStats(player);
-
-      await playerManager.savePlayer(player);
-
-      return {
-        success: true,
-        message: `스탯 포인트 ${totalPoints}개를 할당했습니다.`,
-        newStats: player.stats
-      };
-    } catch (error) {
-      console.error(`스탯 포인트 할당 실패: ${playerId}`, error);
-      return { success: false, message: '스탯 포인트 할당 중 오류가 발생했습니다.' };
-    }
-  }
-
-  /**
-   * 스탯 리셋 (유료)
-   */
-  async resetStats(playerId: string, resetCost: number = 10000): Promise<{
-    success: boolean;
-    message: string;
-    refundedPoints?: number;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      if (player.gold < resetCost) {
-        return { 
-          success: false, 
-          message: `골드가 부족합니다. (필요: ${resetCost}, 보유: ${player.gold})` 
-        };
-      }
-
-      // 기본 스탯 (레벨 1일 때의 기본 스탯: 각각 10)
-      const baseStats = 10;
-      
-      // 현재 할당된 스탯 포인트 계산
-      const allocatedStr = Math.max(0, player.stats.str - baseStats);
-      const allocatedDex = Math.max(0, player.stats.dex - baseStats);
-      const allocatedInt = Math.max(0, player.stats.int - baseStats);
-      const allocatedVit = Math.max(0, player.stats.vit - baseStats);
-      const allocatedLuk = Math.max(0, player.stats.luk - baseStats);
-
-      const totalAllocatedPoints = allocatedStr + allocatedDex + allocatedInt + allocatedVit + allocatedLuk;
-
-      // 스탯을 기본값으로 리셋
-      player.stats.str = baseStats;
-      player.stats.dex = baseStats;
-      player.stats.int = baseStats;
-      player.stats.vit = baseStats;
-      player.stats.luk = baseStats;
-
-      // 스탯 포인트 환불
-      player.level.statPoints += totalAllocatedPoints;
-
-      // 비용 차감
-      player.gold -= resetCost;
-
-      // 파생 스탯 재계산
-      this.recalculateDerivedStats(player);
-
-      await playerManager.savePlayer(player);
-
-      return {
-        success: true,
-        message: `스탯이 리셋되었습니다. ${totalAllocatedPoints}개의 스탯 포인트가 환불되었습니다.`,
-        refundedPoints: totalAllocatedPoints
-      };
-    } catch (error) {
-      console.error(`스탯 리셋 실패: ${playerId}`, error);
-      return { success: false, message: '스탯 리셋 중 오류가 발생했습니다.' };
-    }
-  }
-
-  /**
-   * 특정 레벨에 필요한 총 경험치 계산
-   */
-  calculateTotalExperienceForLevel(level: number): number {
-    let total = 0;
-    for (let i = 1; i < level; i++) {
-      total += this.calculateRequiredExperience(i);
-    }
-    return total;
-  }
-
-  /**
-   * 두 레벨 사이의 경험치 차이 계산
-   */
-  calculateExperienceBetweenLevels(fromLevel: number, toLevel: number): number {
-    return this.calculateTotalExperienceForLevel(toLevel) - 
-           this.calculateTotalExperienceForLevel(fromLevel);
-  }
-
-  /**
-   * 현재 경험치로 도달 가능한 최대 레벨 계산
-   */
-  calculateMaxLevelFromExperience(totalExperience: number): number {
-    let level = 1;
-    let accumulatedExp = 0;
-    
-    while (level < this.MAX_LEVEL) {
-      const requiredExp = this.calculateRequiredExperience(level);
-      if (accumulatedExp + requiredExp > totalExperience) {
-        break;
-      }
-      accumulatedExp += requiredExp;
-      level++;
-    }
-    
-    return level;
-  }
-
-  /**
-   * 레벨 순위 계산
-   */
-  async calculateLevelRanking(playerId: string): Promise<{
-    rank: number;
-    totalPlayers: number;
-    percentile: number;
-  }> {
-    try {
-      const allPlayers = await playerManager.getAllPlayers();
-      const targetPlayer = allPlayers.find(p => p.info.id === playerId);
-      
-      if (!targetPlayer) {
-        return { rank: 0, totalPlayers: 0, percentile: 0 };
-      }
-
-      // 레벨 순으로 정렬 (같은 레벨이면 경험치 순)
-      allPlayers.sort((a, b) => {
-        if (a.level.level !== b.level.level) {
-          return b.level.level - a.level.level;
-        }
-        return b.level.experience - a.level.experience;
-      });
-
-      const rank = allPlayers.findIndex(p => p.info.id === playerId) + 1;
-      const percentile = (rank / allPlayers.length) * 100;
-
-      return {
-        rank,
-        totalPlayers: allPlayers.length,
-        percentile: Math.round(percentile * 100) / 100
-      };
-    } catch (error) {
-      console.error(`레벨 순위 계산 실패: ${playerId}`, error);
-      return { rank: 0, totalPlayers: 0, percentile: 0 };
-    }
-  }
-
-  /**
-   * 파티 경험치 분배 계산
-   */
-  calculatePartyExperienceShare(
-    totalExperience: number,
-    partyMembers: Array<{ level: number; contribution: number; }>
-  ): Array<{ memberId: number; experience: number; }> {
-    const totalContribution = partyMembers.reduce((sum, member) => sum + member.contribution, 0);
-    const averageLevel = partyMembers.reduce((sum, member) => sum + member.level, 0) / partyMembers.length;
-
-    return partyMembers.map((member, index) => {
-      // 기본 분배 (기여도 기반)
-      let share = (member.contribution / totalContribution) * totalExperience;
-
-      // 레벨 차이 보정
-      const levelDiff = member.level - averageLevel;
-      const levelMultiplier = 1 + (levelDiff * 0.05); // 레벨 차이 1당 5% 보정
-      share *= Math.max(0.5, Math.min(1.5, levelMultiplier)); // 50%~150% 범위
-
-      // 파티 보너스 (20%)
-      share *= 1.2;
-
-      return {
-        memberId: index,
-        experience: Math.floor(share)
-      };
-    });
-  }
-
-  /**
-   * 경험치 부스트 이벤트 적용
-   */
-  async applyExperienceBoost(
-    playerId: string,
-    boostMultiplier: number,
-    duration: number // 밀리초
-  ): Promise<boolean> {
-    try {
-      // 실제 구현에서는 플레이어의 임시 효과 목록에 추가
-      // 여기서는 간단히 로그만 출력
-      console.log(`플레이어 ${playerId}에게 ${boostMultiplier}x 경험치 부스트 적용 (${duration}ms)`);
-      return true;
-    } catch (error) {
-      console.error(`경험치 부스트 적용 실패: ${playerId}`, error);
-      return false;
-    }
-  }
-
-  // 내부 계산 메서드들
-  private calculateRequiredExperience(level: number): number {
+  getRequiredExperience(level: number): number {
     if (level <= 1) return 0;
-    return Math.floor(this.BASE_EXP_REQUIREMENT * Math.pow(this.EXP_GROWTH_RATE, level - 2));
-  }
 
-  private calculateExperienceGain(
-    baseAmount: number,
-    source: ExperienceGain['source'],
-    player: Player,
-    additionalMultiplier: number,
-    description: string
-  ): ExperienceGain {
-    const sourceMultiplier = this.EXP_MULTIPLIERS[source] || 1.0;
-    let totalMultiplier = sourceMultiplier * additionalMultiplier;
-
-    // 레벨 기반 보너스 (고레벨일수록 경험치 획득량 증가)
-    if (player.level.level >= 100) {
-      totalMultiplier *= 1.1;
-    }
-    if (player.level.level >= 500) {
-      totalMultiplier *= 1.1;
-    }
-    if (player.level.level >= 1000) {
-      totalMultiplier *= 1.2;
-    }
-
-    // 장비나 버프로 인한 경험치 보너스 (추후 구현)
-    let equipmentBonus = 0;
+    let totalExp = 0;
     
-    const finalAmount = Math.floor(baseAmount * totalMultiplier + equipmentBonus);
+    for (let l = 1; l < level; l++) {
+      // 기본 지수 증가
+      let expForLevel = this.config.baseExperience * Math.pow(this.config.exponentialBase, l - 1);
+      
+      // 선형 증가 요소 추가
+      expForLevel += this.config.linearMultiplier * l;
+      
+      // 고레벨 스케일링 (레벨 100 이후)
+      if (l >= 100) {
+        const extraLevels = l - 100;
+        expForLevel *= Math.pow(this.config.scalingFactor, extraLevels);
+      }
+      
+      // 매우 고레벨에서의 추가 스케일링 (레벨 1000 이후)
+      if (l >= 1000) {
+        const megaLevels = l - 1000;
+        expForLevel *= Math.pow(1.01, megaLevels);
+      }
+      
+      totalExp += Math.floor(expForLevel);
+    }
 
-    return {
-      source,
-      baseAmount,
-      multiplier: totalMultiplier,
-      bonus: equipmentBonus,
-      finalAmount,
-      description: description || `${source}로부터 경험치 획득`
-    };
+    return totalExp;
   }
 
-  private calculateLevelUpReward(level: number, player: Player): LevelUpReward {
-    const baseReward: LevelUpReward = {
-      statPoints: this.STAT_POINTS_PER_LEVEL,
-      skillPoints: this.SKILL_POINTS_PER_LEVEL
-    };
+  /**
+   * 현재 레벨에서 다음 레벨까지 필요한 경험치 계산
+   */
+  getExperienceForNextLevel(currentLevel: number): number {
+    return this.getRequiredExperience(currentLevel + 1) - this.getRequiredExperience(currentLevel);
+  }
 
-    // 특정 레벨에서 보너스 보상
-    if (level % 10 === 0) { // 10, 20, 30, ... 레벨마다
-      baseReward.bonusRewards = {
-        gold: level * 100,
-        items: []
+  /**
+   * 경험치로부터 레벨 계산 (이진 탐색 사용)
+   */
+  getLevelFromExperience(experience: number): number {
+    if (experience < this.config.baseExperience) return 1;
+
+    // 이진 탐색으로 효율적인 레벨 계산
+    let low = 1;
+    let high = Math.max(100, Math.floor(experience / this.config.baseExperience));
+    
+    // 매우 높은 경험치의 경우 상한선 확장
+    while (this.getRequiredExperience(high) < experience) {
+      high *= 2;
+    }
+
+    while (low < high) {
+      const mid = Math.floor((low + high + 1) / 2);
+      if (this.getRequiredExperience(mid) <= experience) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return low;
+  }
+
+  /**
+   * 레벨업 처리 및 스탯 증가 계산
+   */
+  processLevelUp(player: Player, gainedExperience: number, selectedStat?: keyof Stats): {
+    leveledUp: boolean;
+    levelsGained: number;
+    statGains: Partial<Stats>;
+    milestoneReached: boolean;
+  } {
+    const oldLevel = player.level;
+    const newExperience = player.experience + gainedExperience;
+    const newLevel = this.getLevelFromExperience(newExperience);
+    const levelsGained = newLevel - oldLevel;
+    
+    if (levelsGained <= 0) {
+      return {
+        leveledUp: false,
+        levelsGained: 0,
+        statGains: {},
+        milestoneReached: false
       };
     }
 
-    if (level % 50 === 0) { // 50, 100, 150, ... 레벨마다
-      baseReward.skillPoints += 1; // 추가 스킬 포인트
-      if (!baseReward.bonusRewards) baseReward.bonusRewards = { items: [] };
-      baseReward.bonusRewards.gold = (baseReward.bonusRewards.gold || 0) + level * 200;
+    // 레벨업마다 스탯 증가 계산
+    const statGains = this.calculateStatGains(oldLevel, newLevel, selectedStat);
+    
+    // 마일스톤 도달 확인
+    const milestoneReached = this.checkMilestoneReached(oldLevel, newLevel);
+
+    logger.info(`플레이어 레벨업: ${oldLevel} → ${newLevel} (+${levelsGained} 레벨)`);
+    logger.info(`스탯 증가:`, statGains);
+    
+    if (milestoneReached) {
+      logger.info(`마일스톤 달성! 레벨 ${newLevel}`);
     }
 
-    if (level % 100 === 0) { // 100, 200, 300, ... 레벨마다
-      baseReward.statPoints += 5; // 추가 스탯 포인트
-      if (!baseReward.bonusRewards) baseReward.bonusRewards = { items: [] };
-      baseReward.bonusRewards.items!.push({
-        itemId: 'level_milestone_box',
-        quantity: 1
-      });
-    }
-
-    return baseReward;
-  }
-
-  private recalculateDerivedStats(player: Player): void {
-    const stats = player.stats;
-    const level = player.level.level;
-
-    // 파생 스탯 재계산
-    stats.hp = stats.vit * 10 + level * 5;
-    stats.mp = stats.int * 10 + level * 3;
-    
-    // 장비 보정 없는 기본 공격력/방어력
-    stats.atk = stats.str * 2;
-    stats.def = stats.vit * 1.5;
-    
-    // 기타 스탯
-    stats.acc = stats.dex * 0.8 + level;
-    stats.eva = stats.dex * 0.6 + stats.luk * 0.2;
-    stats.crit = stats.dex * 0.3 + stats.luk * 0.7;
-  }
-
-  private createEmptyExpGain(): ExperienceGain {
     return {
-      source: 'combat',
-      baseAmount: 0,
-      multiplier: 0,
-      bonus: 0,
-      finalAmount: 0,
-      description: ''
+      leveledUp: true,
+      levelsGained,
+      statGains,
+      milestoneReached
     };
+  }
+
+  /**
+   * 레벨 범위에 따른 스탯 증가 계산
+   */
+  private calculateStatGains(oldLevel: number, newLevel: number, selectedStat?: keyof Stats): Partial<Stats> {
+    const statGains: Partial<Stats> = {
+      hp: 0,
+      mp: 0,
+      str: 0,
+      dex: 0,
+      int: 0,
+      vit: 0,
+      luk: 0
+    };
+
+    for (let level = oldLevel + 1; level <= newLevel; level++) {
+      // 기본 스탯 증가 (모든 스탯에 적용)
+      statGains.str! += this.statGrowth.baseStatPerLevel;
+      statGains.dex! += this.statGrowth.baseStatPerLevel;
+      statGains.int! += this.statGrowth.baseStatPerLevel;
+      statGains.vit! += this.statGrowth.baseStatPerLevel;
+      statGains.luk! += this.statGrowth.baseStatPerLevel;
+
+      // 선택한 스탯에 추가 보너스
+      if (selectedStat && selectedStat !== 'hp' && selectedStat !== 'mp') {
+        statGains[selectedStat]! += this.statGrowth.statChoiceBonus;
+      }
+
+      // 마일스톤 보너스
+      if (level % this.statGrowth.milestoneInterval === 0) {
+        statGains.str! += this.statGrowth.milestoneBonus;
+        statGains.dex! += this.statGrowth.milestoneBonus;
+        statGains.int! += this.statGrowth.milestoneBonus;
+        statGains.vit! += this.statGrowth.milestoneBonus;
+        statGains.luk! += this.statGrowth.milestoneBonus;
+      }
+
+      // HP/MP 계산 (VIT/INT 기반)
+      const hpGain = Math.floor((statGains.vit! / 5) * 10); // VIT 5당 HP 10 증가
+      const mpGain = Math.floor((statGains.int! / 3) * 5);  // INT 3당 MP 5 증가
+      
+      statGains.hp! += hpGain;
+      statGains.mp! += mpGain;
+    }
+
+    return statGains;
+  }
+
+  /**
+   * 마일스톤 도달 확인
+   */
+  private checkMilestoneReached(oldLevel: number, newLevel: number): boolean {
+    const oldMilestone = Math.floor(oldLevel / this.statGrowth.milestoneInterval);
+    const newMilestone = Math.floor(newLevel / this.statGrowth.milestoneInterval);
+    return newMilestone > oldMilestone;
+  }
+
+  /**
+   * 레벨에 따른 추천 스탯 분배 제안
+   */
+  getRecommendedStatDistribution(level: number, playerClass?: string): Partial<Stats> {
+    const recommendations: Record<string, Partial<Stats>> = {
+      warrior: { str: 0.4, vit: 0.3, dex: 0.2, int: 0.05, luk: 0.05 },
+      mage: { int: 0.4, mp: 0.3, dex: 0.15, vit: 0.1, luk: 0.05 },
+      archer: { dex: 0.4, str: 0.25, vit: 0.2, int: 0.1, luk: 0.05 },
+      thief: { dex: 0.35, luk: 0.3, str: 0.2, vit: 0.1, int: 0.05 },
+      priest: { int: 0.35, vit: 0.25, mp: 0.2, dex: 0.15, luk: 0.05 },
+      balanced: { str: 0.2, dex: 0.2, int: 0.2, vit: 0.2, luk: 0.2 }
+    };
+
+    const classType = playerClass?.toLowerCase() || 'balanced';
+    const distribution = recommendations[classType] || recommendations.balanced;
+    
+    const totalStats = level * this.statGrowth.baseStatPerLevel;
+    const result: Partial<Stats> = {};
+    
+    Object.entries(distribution).forEach(([stat, ratio]) => {
+      if (stat !== 'hp' && stat !== 'mp') {
+        result[stat as keyof Stats] = Math.floor(totalStats * ratio);
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * 레벨 페널티 없는 시스템 - 모든 콘텐츠는 플레이어 레벨에 맞춰 스케일링
+   */
+  getScaledContentDifficulty(baseLevel: number, playerLevel: number): {
+    scaledLevel: number;
+    experienceMultiplier: number;
+    rewardMultiplier: number;
+  } {
+    // 플레이어보다 낮은 레벨의 콘텐츠도 적절한 난이도와 보상 제공
+    const levelDifference = playerLevel - baseLevel;
+    
+    let scaledLevel = baseLevel;
+    let experienceMultiplier = 1.0;
+    let rewardMultiplier = 1.0;
+
+    if (levelDifference > 0) {
+      // 플레이어가 높은 레벨일 때 - 콘텐츠를 일부 스케일링
+      const scalingRatio = Math.min(0.8, levelDifference / 100); // 최대 80%까지 스케일링
+      scaledLevel = Math.floor(baseLevel + (levelDifference * scalingRatio));
+      
+      // 경험치는 줄어들지만 0이 되지는 않음
+      experienceMultiplier = Math.max(0.1, 1 - (levelDifference * 0.01));
+      
+      // 보상은 유지하되 약간 조정
+      rewardMultiplier = Math.max(0.5, 1 - (levelDifference * 0.005));
+    } else if (levelDifference < 0) {
+      // 플레이어가 낮은 레벨일 때 - 추가 보상 제공
+      const difficultyBonus = Math.abs(levelDifference);
+      experienceMultiplier = 1 + (difficultyBonus * 0.05); // 레벨차 1당 5% 추가 경험치
+      rewardMultiplier = 1 + (difficultyBonus * 0.03);     // 레벨차 1당 3% 추가 보상
+    }
+
+    return {
+      scaledLevel: Math.max(1, scaledLevel),
+      experienceMultiplier: Math.max(0.1, experienceMultiplier),
+      rewardMultiplier: Math.max(0.5, rewardMultiplier)
+    };
+  }
+
+  /**
+   * 레벨 구간별 특별 보상 계산
+   */
+  getLevelTierRewards(level: number): {
+    tier: string;
+    bonusStatPoints: number;
+    specialRewards: string[];
+  } {
+    const tiers = [
+      { min: 1, max: 99, name: 'Novice', bonusPoints: 0, rewards: [] },
+      { min: 100, max: 199, name: 'Advanced', bonusPoints: 10, rewards: ['스탯 재분배권'] },
+      { min: 200, max: 499, name: 'Expert', bonusPoints: 25, rewards: ['스탯 재분배권', '스킬 리셋권'] },
+      { min: 500, max: 999, name: 'Master', bonusPoints: 50, rewards: ['스탯 재분배권', '스킬 리셋권', '특별 타이틀'] },
+      { min: 1000, max: 1999, name: 'Grandmaster', bonusPoints: 100, rewards: ['전체 리셋권', '레전더리 타이틀'] },
+      { min: 2000, max: 4999, name: 'Legend', bonusPoints: 200, rewards: ['전체 리셋권', '미스틱 타이틀', '특별 스킬'] },
+      { min: 5000, max: 9999, name: 'Mythic', bonusPoints: 500, rewards: ['전체 리셋권', '디바인 타이틀', '고유 스킬'] },
+      { min: 10000, max: Infinity, name: 'Transcendent', bonusPoints: 1000, rewards: ['무한 리셋권', '초월자 타이틀', '창조 스킬'] }
+    ];
+
+    const tier = tiers.find(t => level >= t.min && level <= t.max) || tiers[0];
+    
+    return {
+      tier: tier.name,
+      bonusStatPoints: tier.bonusPoints,
+      specialRewards: tier.rewards
+    };
+  }
+
+  /**
+   * 무한 성장을 위한 스탯 상한선 제거 및 소프트 캡 적용
+   */
+  applySoftCaps(stats: Stats): Stats {
+    const softCapped = { ...stats };
+    
+    // 소프트 캡 적용 (효율성은 떨어지지만 무한 성장 가능)
+    const applySoftCap = (value: number, softCap: number): number => {
+      if (value <= softCap) return value;
+      
+      const excess = value - softCap;
+      const softCapReduction = Math.log(excess + 1) * (softCap * 0.1);
+      return softCap + softCapReduction;
+    };
+
+    // 각 스탯별 소프트 캡 적용
+    softCapped.str = applySoftCap(stats.str, 999);
+    softCapped.dex = applySoftCap(stats.dex, 999);
+    softCapped.int = applySoftCap(stats.int, 999);
+    softCapped.vit = applySoftCap(stats.vit, 999);
+    softCapped.luk = applySoftCap(stats.luk, 999);
+    
+    // HP/MP는 더 높은 소프트 캡
+    softCapped.hp = applySoftCap(stats.hp, 99999);
+    softCapped.mp = applySoftCap(stats.mp, 99999);
+
+    return softCapped;
   }
 }
 
-// 싱글톤 인스턴스
+// 전역 레벨 시스템 인스턴스
 export const levelSystem = new LevelSystem();
+
+// 레벨 관련 유틸리티 함수들
+export const levelUtils = {
+  /**
+   * 경험치 표시를 위한 포맷팅
+   */
+  formatExperience(exp: number): string {
+    if (exp >= 1000000000) {
+      return `${(exp / 1000000000).toFixed(1)}B`;
+    } else if (exp >= 1000000) {
+      return `${(exp / 1000000).toFixed(1)}M`;
+    } else if (exp >= 1000) {
+      return `${(exp / 1000).toFixed(1)}K`;
+    }
+    return exp.toString();
+  },
+
+  /**
+   * 레벨업 진행률 계산
+   */
+  getLevelProgress(player: Player): number {
+    const currentLevelExp = levelSystem.getRequiredExperience(player.level);
+    const nextLevelExp = levelSystem.getRequiredExperience(player.level + 1);
+    const expInCurrentLevel = player.experience - currentLevelExp;
+    const expNeededForNext = nextLevelExp - currentLevelExp;
+    
+    return Math.min(100, Math.max(0, (expInCurrentLevel / expNeededForNext) * 100));
+  },
+
+  /**
+   * 다음 레벨까지 남은 경험치
+   */
+  getExperienceToNextLevel(player: Player): number {
+    const nextLevelExp = levelSystem.getRequiredExperience(player.level + 1);
+    return Math.max(0, nextLevelExp - player.experience);
+  }
+};

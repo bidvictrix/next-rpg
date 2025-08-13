@@ -1,751 +1,769 @@
-import { 
-  Skill, 
-  SkillTree, 
-  SkillTreeNode, 
-  SkillTreeCategory, 
-  PlayerSkill,
-  SkillRequirement,
-  SkillLevelUpResult,
-  SkillEvolution,
-  SkillCombination
-} from '../types/skill';
-import { Player } from '../types/player';
-import { gameDataManager } from './gameDataManager';
-import { playerManager } from './playerManager';
+import { Player, Skill, SkillEffect, SkillRequirement, Stats } from '@/types/game';
+import { logger } from './logger';
 
-export class SkillSystem {
-  private skillTreeCache: Map<string, SkillTree> = new Map();
-  private lastCacheUpdate: number = 0;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5분
+// 스킬 트리 노드 인터페이스
+interface SkillTreeNode {
+  skillId: string;
+  level: number;
+  maxLevel: number;
+  children: SkillTreeNode[];
+  parents: string[]; // 전제조건 스킬들
+  position: { x: number; y: number }; // UI에서의 위치
+  unlocked: boolean;
+  experience: number;
+  requiredExperience: number;
+}
 
-  /**
-   * 플레이어의 스킬 트리 로드
-   */
-  async loadPlayerSkillTree(playerId: string): Promise<SkillTree | null> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) return null;
+// 스킬 진화 인터페이스
+interface SkillEvolution {
+  baseSkillId: string;
+  evolvedSkillId: string;
+  requirements: {
+    level: number;
+    otherSkills?: { skillId: string; level: number }[];
+    stats?: Partial<Stats>;
+    questCompleted?: string;
+    itemRequired?: string;
+  };
+}
 
-      const cacheKey = `player_${playerId}`;
-      
-      // 캐시 확인
-      if (this.skillTreeCache.has(cacheKey) && 
-          Date.now() - this.lastCacheUpdate < this.CACHE_DURATION) {
-        return this.skillTreeCache.get(cacheKey)!;
-      }
+// 스킬 조합 인터페이스
+interface SkillCombination {
+  id: string;
+  name: string;
+  description: string;
+  requiredSkills: { skillId: string; level: number }[];
+  resultSkill: string;
+  combinationType: 'merge' | 'evolve' | 'transcend';
+}
 
-      // 전체 스킬 데이터 로드
-      const allSkills = await gameDataManager.loadAllSkills();
-      const playerSkills = new Map<string, PlayerSkill>();
-      
-      // 플레이어 스킬을 맵으로 변환
-      player.skills.forEach(skill => {
-        playerSkills.set(skill.skillId, skill);
-      });
+// 스킬 점수 시스템
+interface SkillPointSystem {
+  totalPoints: number;
+  usedPoints: number;
+  availablePoints: number;
+  pointsPerLevel: number;
+  bonusPointSources: string[]; // 퀘스트, 업적 등으로 얻은 추가 포인트
+}
 
-      // 스킬 트리 구성
-      const skillTree = await this.buildSkillTree(allSkills, playerSkills, player);
-      
-      // 캐시 저장
-      this.skillTreeCache.set(cacheKey, skillTree);
-      this.lastCacheUpdate = Date.now();
-      
-      return skillTree;
-    } catch (error) {
-      console.error(`플레이어 스킬 트리 로드 실패: ${playerId}`, error);
-      return null;
-    }
+// 스킬 효과 스택 시스템
+interface SkillEffectStack {
+  skillId: string;
+  effectType: string;
+  stacks: number;
+  maxStacks: number;
+  duration: number;
+  stackDecayTime: number;
+  bonusPerStack: number;
+}
+
+export class SkillTreeSystem {
+  private skillTrees: Map<string, SkillTreeNode[]> = new Map();
+  private skillEvolutions: SkillEvolution[] = [];
+  private skillCombinations: SkillCombination[] = [];
+  private playerSkillStacks: Map<string, SkillEffectStack[]> = new Map();
+
+  constructor() {
+    this.initializeDefaultSkillTrees();
+    this.initializeSkillEvolutions();
+    this.initializeSkillCombinations();
   }
 
   /**
-   * 스킬 학습
+   * 무한 확장 스킬 트리 초기화
    */
-  async learnSkill(playerId: string, skillId: string): Promise<{
-    success: boolean;
-    message: string;
-    newSkillLevel?: number;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      const skill = await gameDataManager.getSkill(skillId);
-      if (!skill) {
-        return { success: false, message: '존재하지 않는 스킬입니다.' };
-      }
-
-      // 이미 학습한 스킬인지 확인
-      const existingSkill = player.skills.find(s => s.skillId === skillId);
-      if (existingSkill) {
-        return { success: false, message: '이미 학습한 스킬입니다.' };
-      }
-
-      // 학습 조건 확인
-      const canLearn = await this.checkSkillRequirements(skill, player);
-      if (!canLearn.success) {
-        return { success: false, message: canLearn.message };
-      }
-
-      // 스킬 포인트 확인
-      if (player.level.skillPoints < skill.learnCost.skillPoints) {
-        return { 
-          success: false, 
-          message: `스킬 포인트가 부족합니다. (필요: ${skill.learnCost.skillPoints}, 보유: ${player.level.skillPoints})` 
-        };
-      }
-
-      // 골드 확인
-      if (skill.learnCost.gold && player.gold < skill.learnCost.gold) {
-        return { 
-          success: false, 
-          message: `골드가 부족합니다. (필요: ${skill.learnCost.gold}, 보유: ${player.gold})` 
-        };
-      }
-
-      // 필요 아이템 확인
-      if (skill.learnCost.items) {
-        for (const requiredItem of skill.learnCost.items) {
-          const playerItem = player.inventory.find(item => item.itemId === requiredItem.itemId);
-          if (!playerItem || playerItem.quantity < requiredItem.quantity) {
-            return { 
-              success: false, 
-              message: `아이템이 부족합니다: ${requiredItem.itemId} (필요: ${requiredItem.quantity})` 
-            };
-          }
-        }
-      }
-
-      // 비용 지불
-      player.level.skillPoints -= skill.learnCost.skillPoints;
-      if (skill.learnCost.gold) {
-        player.gold -= skill.learnCost.gold;
-      }
-
-      // 필요 아이템 소모
-      if (skill.learnCost.items) {
-        for (const requiredItem of skill.learnCost.items) {
-          await playerManager.removeItem(playerId, requiredItem.itemId, requiredItem.quantity);
-        }
-      }
-
-      // 스킬 추가
-      const newPlayerSkill: PlayerSkill = {
-        skillId,
-        level: 1,
+  private initializeDefaultSkillTrees(): void {
+    // 전투 스킬 트리
+    const combatTree: SkillTreeNode[] = [
+      {
+        skillId: 'basic_attack',
+        level: 0,
+        maxLevel: 100,
+        children: [],
+        parents: [],
+        position: { x: 0, y: 0 },
+        unlocked: true,
         experience: 0,
-        equipped: false
-      };
-
-      player.skills.push(newPlayerSkill);
-      await playerManager.savePlayer(player);
-
-      // 캐시 무효화
-      this.skillTreeCache.delete(`player_${playerId}`);
-
-      return { 
-        success: true, 
-        message: `${skill.name} 스킬을 학습했습니다!`,
-        newSkillLevel: 1
-      };
-    } catch (error) {
-      console.error(`스킬 학습 실패: ${playerId}, ${skillId}`, error);
-      return { success: false, message: '스킬 학습 중 오류가 발생했습니다.' };
-    }
-  }
-
-  /**
-   * 스킬 레벨업
-   */
-  async levelUpSkill(playerId: string, skillId: string): Promise<SkillLevelUpResult> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { 
-          success: false, 
-          newLevel: 0, 
-          newEffects: [], 
-          message: '플레이어를 찾을 수 없습니다.' 
-        };
-      }
-
-      const skill = await gameDataManager.getSkill(skillId);
-      if (!skill) {
-        return { 
-          success: false, 
-          newLevel: 0, 
-          newEffects: [], 
-          message: '존재하지 않는 스킬입니다.' 
-        };
-      }
-
-      const playerSkill = player.skills.find(s => s.skillId === skillId);
-      if (!playerSkill) {
-        return { 
-          success: false, 
-          newLevel: 0, 
-          newEffects: [], 
-          message: '학습하지 않은 스킬입니다.' 
-        };
-      }
-
-      // 최대 레벨 확인
-      if (skill.maxLevel > 0 && playerSkill.level >= skill.maxLevel) {
-        return { 
-          success: false, 
-          newLevel: playerSkill.level, 
-          newEffects: [], 
-          message: '이미 최대 레벨입니다.' 
-        };
-      }
-
-      // 필요 경험치 계산
-      const requiredExp = this.calculateRequiredExperience(skill, playerSkill.level);
-      if (playerSkill.experience < requiredExp) {
-        return { 
-          success: false, 
-          newLevel: playerSkill.level, 
-          newEffects: [], 
-          message: `경험치가 부족합니다. (${playerSkill.experience}/${requiredExp})` 
-        };
-      }
-
-      // 레벨업 처리
-      playerSkill.experience -= requiredExp;
-      playerSkill.level++;
-
-      // 새로운 효과 계산
-      const newEffects = this.calculateSkillEffectsAtLevel(skill, playerSkill.level);
-      
-      // 해금되는 스킬 확인
-      const unlockedSkills = await this.checkUnlockedSkills(player, skillId, playerSkill.level);
-
-      await playerManager.savePlayer(player);
-
-      // 캐시 무효화
-      this.skillTreeCache.delete(`player_${playerId}`);
-
-      return {
-        success: true,
-        newLevel: playerSkill.level,
-        newEffects,
-        unlockedSkills: unlockedSkills.length > 0 ? unlockedSkills : undefined,
-        message: `${skill.name}이(가) ${playerSkill.level}레벨이 되었습니다!`
-      };
-    } catch (error) {
-      console.error(`스킬 레벨업 실패: ${playerId}, ${skillId}`, error);
-      return { 
-        success: false, 
-        newLevel: 0, 
-        newEffects: [], 
-        message: '스킬 레벨업 중 오류가 발생했습니다.' 
-      };
-    }
-  }
-
-  /**
-   * 스킬 경험치 추가
-   */
-  async addSkillExperience(playerId: string, skillId: string, experience: number): Promise<boolean> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) return false;
-
-      const playerSkill = player.skills.find(s => s.skillId === skillId);
-      if (!playerSkill) return false;
-
-      playerSkill.experience += experience;
-      await playerManager.savePlayer(player);
-
-      return true;
-    } catch (error) {
-      console.error(`스킬 경험치 추가 실패: ${playerId}, ${skillId}`, error);
-      return false;
-    }
-  }
-
-  /**
-   * 스킬 장착/해제
-   */
-  async toggleSkillEquip(playerId: string, skillId: string): Promise<{
-    success: boolean;
-    equipped: boolean;
-    message: string;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, equipped: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      const playerSkill = player.skills.find(s => s.skillId === skillId);
-      if (!playerSkill) {
-        return { success: false, equipped: false, message: '학습하지 않은 스킬입니다.' };
-      }
-
-      const skill = await gameDataManager.getSkill(skillId);
-      if (!skill) {
-        return { success: false, equipped: false, message: '존재하지 않는 스킬입니다.' };
-      }
-
-      // 액티브 스킬 개수 제한 확인 (예: 최대 8개)
-      const MAX_ACTIVE_SKILLS = 8;
-      const activeSkills = player.skills.filter(s => s.equipped).length;
-
-      if (!playerSkill.equipped && activeSkills >= MAX_ACTIVE_SKILLS) {
-        return { 
-          success: false, 
-          equipped: false, 
-          message: `최대 ${MAX_ACTIVE_SKILLS}개의 스킬만 장착할 수 있습니다.` 
-        };
-      }
-
-      // 장착 상태 토글
-      playerSkill.equipped = !playerSkill.equipped;
-      await playerManager.savePlayer(player);
-
-      return {
-        success: true,
-        equipped: playerSkill.equipped,
-        message: `${skill.name}을(를) ${playerSkill.equipped ? '장착' : '해제'}했습니다.`
-      };
-    } catch (error) {
-      console.error(`스킬 장착 토글 실패: ${playerId}, ${skillId}`, error);
-      return { success: false, equipped: false, message: '스킬 장착 처리 중 오류가 발생했습니다.' };
-    }
-  }
-
-  /**
-   * 스킬 진화
-   */
-  async evolveSkill(playerId: string, evolution: SkillEvolution): Promise<{
-    success: boolean;
-    message: string;
-    newSkillId?: string;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      // 기존 스킬 확인
-      const fromSkill = player.skills.find(s => s.skillId === evolution.fromSkillId);
-      if (!fromSkill) {
-        return { success: false, message: '진화 대상 스킬을 보유하지 않았습니다.' };
-      }
-
-      // 진화 조건 확인
-      const canEvolve = await this.checkEvolutionRequirements(evolution, player);
-      if (!canEvolve.success) {
-        return { success: false, message: canEvolve.message };
-      }
-
-      // 비용 지불
-      if (player.gold < evolution.cost.gold) {
-        return { success: false, message: '골드가 부족합니다.' };
-      }
-
-      if (player.level.skillPoints < evolution.cost.skillPoints) {
-        return { success: false, message: '스킬 포인트가 부족합니다.' };
-      }
-
-      // 재료 소모
-      if (evolution.materials) {
-        for (const material of evolution.materials) {
-          await playerManager.removeItem(playerId, material.itemId, material.quantity);
-        }
-      }
-
-      // 비용 차감
-      player.gold -= evolution.cost.gold;
-      player.level.skillPoints -= evolution.cost.skillPoints;
-
-      // 기존 스킬 제거
-      const skillIndex = player.skills.findIndex(s => s.skillId === evolution.fromSkillId);
-      if (skillIndex !== -1) {
-        player.skills.splice(skillIndex, 1);
-      }
-
-      // 새로운 스킬 추가
-      const newPlayerSkill: PlayerSkill = {
-        skillId: evolution.toSkillId,
-        level: 1,
+        requiredExperience: 100
+      },
+      {
+        skillId: 'power_strike',
+        level: 0,
+        maxLevel: 50,
+        children: [],
+        parents: ['basic_attack'],
+        position: { x: 1, y: 0 },
+        unlocked: false,
         experience: 0,
-        equipped: fromSkill.equipped // 이전 장착 상태 유지
-      };
-
-      player.skills.push(newPlayerSkill);
-      await playerManager.savePlayer(player);
-
-      // 캐시 무효화
-      this.skillTreeCache.delete(`player_${playerId}`);
-
-      const newSkill = await gameDataManager.getSkill(evolution.toSkillId);
-      return {
-        success: true,
-        message: `스킬이 ${newSkill?.name || evolution.toSkillId}(으)로 진화했습니다!`,
-        newSkillId: evolution.toSkillId
-      };
-    } catch (error) {
-      console.error(`스킬 진화 실패: ${playerId}`, error);
-      return { success: false, message: '스킬 진화 중 오류가 발생했습니다.' };
-    }
-  }
-
-  /**
-   * 스킬 조합
-   */
-  async combineSkills(playerId: string, combination: SkillCombination): Promise<{
-    success: boolean;
-    message: string;
-    newSkillId?: string;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
-      }
-
-      // 필요 스킬 확인
-      for (const reqSkill of combination.requiredSkills) {
-        const playerSkill = player.skills.find(s => s.skillId === reqSkill.skillId);
-        if (!playerSkill || playerSkill.level < reqSkill.minLevel) {
-          return { 
-            success: false, 
-            message: `${reqSkill.skillId} 스킬의 레벨이 부족합니다. (필요: ${reqSkill.minLevel})` 
-          };
-        }
-      }
-
-      // 재료 확인
-      if (combination.materials) {
-        for (const material of combination.materials) {
-          const playerItem = player.inventory.find(item => item.itemId === material.itemId);
-          if (!playerItem || playerItem.quantity < material.quantity) {
-            return { 
-              success: false, 
-              message: `${material.itemId} 아이템이 부족합니다. (필요: ${material.quantity})` 
-            };
-          }
-        }
-      }
-
-      // 성공률 확인
-      const success = Math.random() * 100 < combination.successRate;
-      if (!success) {
-        // 실패시에도 재료 소모
-        if (combination.materials) {
-          for (const material of combination.materials) {
-            await playerManager.removeItem(playerId, material.itemId, material.quantity);
-          }
-        }
-        
-        return { success: false, message: '스킬 조합에 실패했습니다.' };
-      }
-
-      // 재료 소모
-      if (combination.materials) {
-        for (const material of combination.materials) {
-          await playerManager.removeItem(playerId, material.itemId, material.quantity);
-        }
-      }
-
-      // 새로운 스킬 추가
-      const newPlayerSkill: PlayerSkill = {
-        skillId: combination.resultSkill,
-        level: 1,
+        requiredExperience: 250
+      },
+      {
+        skillId: 'combo_mastery',
+        level: 0,
+        maxLevel: 25,
+        children: [],
+        parents: ['power_strike'],
+        position: { x: 2, y: 0 },
+        unlocked: false,
         experience: 0,
-        equipped: false
-      };
+        requiredExperience: 500
+      }
+    ];
 
-      player.skills.push(newPlayerSkill);
-      await playerManager.savePlayer(player);
+    // 마법 스킬 트리
+    const magicTree: SkillTreeNode[] = [
+      {
+        skillId: 'magic_missile',
+        level: 0,
+        maxLevel: 100,
+        children: [],
+        parents: [],
+        position: { x: 0, y: 1 },
+        unlocked: true,
+        experience: 0,
+        requiredExperience: 100
+      },
+      {
+        skillId: 'fireball',
+        level: 0,
+        maxLevel: 50,
+        children: [],
+        parents: ['magic_missile'],
+        position: { x: 1, y: 1 },
+        unlocked: false,
+        experience: 0,
+        requiredExperience: 300
+      },
+      {
+        skillId: 'meteor',
+        level: 0,
+        maxLevel: 25,
+        children: [],
+        parents: ['fireball'],
+        position: { x: 2, y: 1 },
+        unlocked: false,
+        experience: 0,
+        requiredExperience: 1000
+      }
+    ];
 
-      // 캐시 무효화
-      this.skillTreeCache.delete(`player_${playerId}`);
-
-      const newSkill = await gameDataManager.getSkill(combination.resultSkill);
-      return {
-        success: true,
-        message: `${newSkill?.name || combination.resultSkill} 스킬을 조합으로 획득했습니다!`,
-        newSkillId: combination.resultSkill
-      };
-    } catch (error) {
-      console.error(`스킬 조합 실패: ${playerId}`, error);
-      return { success: false, message: '스킬 조합 중 오류가 발생했습니다.' };
-    }
+    this.skillTrees.set('combat', combatTree);
+    this.skillTrees.set('magic', magicTree);
+    this.skillTrees.set('support', []);
+    this.skillTrees.set('passive', []);
+    this.skillTrees.set('transcendent', []); // 초월 스킬 트리
   }
 
   /**
-   * 스킬 리셋
+   * 스킬 진화 시스템 초기화
    */
-  async resetSkill(playerId: string, skillId: string): Promise<{
-    success: boolean;
-    message: string;
-    refundedPoints?: number;
-  }> {
-    try {
-      const player = await playerManager.loadPlayer(playerId);
-      if (!player) {
-        return { success: false, message: '플레이어를 찾을 수 없습니다.' };
+  private initializeSkillEvolutions(): void {
+    this.skillEvolutions = [
+      {
+        baseSkillId: 'basic_attack',
+        evolvedSkillId: 'perfected_strike',
+        requirements: {
+          level: 100,
+          otherSkills: [
+            { skillId: 'power_strike', level: 50 },
+            { skillId: 'combo_mastery', level: 25 }
+          ],
+          stats: { str: 500, dex: 300 }
+        }
+      },
+      {
+        baseSkillId: 'fireball',
+        evolvedSkillId: 'inferno_orb',
+        requirements: {
+          level: 50,
+          otherSkills: [{ skillId: 'magic_missile', level: 75 }],
+          stats: { int: 400 }
+        }
       }
-
-      const playerSkill = player.skills.find(s => s.skillId === skillId);
-      if (!playerSkill) {
-        return { success: false, message: '보유하지 않은 스킬입니다.' };
-      }
-
-      const skill = await gameDataManager.getSkill(skillId);
-      if (!skill) {
-        return { success: false, message: '존재하지 않는 스킬입니다.' };
-      }
-
-      // 투자한 스킬 포인트 계산
-      let totalInvestedPoints = skill.learnCost.skillPoints;
-      for (let level = 2; level <= playerSkill.level; level++) {
-        totalInvestedPoints += Math.ceil(level * 0.5); // 레벨업마다 추가 포인트 (임시 공식)
-      }
-
-      // 스킬 제거
-      const skillIndex = player.skills.findIndex(s => s.skillId === skillId);
-      if (skillIndex !== -1) {
-        player.skills.splice(skillIndex, 1);
-      }
-
-      // 스킬 포인트 환불 (50% 환불)
-      const refundedPoints = Math.floor(totalInvestedPoints * 0.5);
-      player.level.skillPoints += refundedPoints;
-
-      await playerManager.savePlayer(player);
-
-      // 캐시 무효화
-      this.skillTreeCache.delete(`player_${playerId}`);
-
-      return {
-        success: true,
-        message: `${skill.name} 스킬을 리셋했습니다. ${refundedPoints} 스킬 포인트가 환불되었습니다.`,
-        refundedPoints
-      };
-    } catch (error) {
-      console.error(`스킬 리셋 실패: ${playerId}, ${skillId}`, error);
-      return { success: false, message: '스킬 리셋 중 오류가 발생했습니다.' };
-    }
+    ];
   }
 
-  // 유틸리티 메서드들
-  private async buildSkillTree(
-    allSkills: Map<string, Skill>,
-    playerSkills: Map<string, PlayerSkill>,
-    player: Player
-  ): Promise<SkillTree> {
-    const categories: Record<string, SkillTreeCategory> = {};
-
-    // 스킬을 카테고리별로 분류
-    for (const [skillId, skill] of allSkills) {
-      const categoryId = skill.category;
-      
-      if (!categories[categoryId]) {
-        categories[categoryId] = {
-          id: categoryId,
-          name: this.getCategoryName(categoryId),
-          description: this.getCategoryDescription(categoryId),
-          color: this.getCategoryColor(categoryId),
-          skills: {}
-        };
+  /**
+   * 스킬 조합 시스템 초기화
+   */
+  private initializeSkillCombinations(): void {
+    this.skillCombinations = [
+      {
+        id: 'flame_sword',
+        name: '화염검',
+        description: '검술과 화염 마법의 조합으로 만들어진 하이브리드 스킬',
+        requiredSkills: [
+          { skillId: 'power_strike', level: 25 },
+          { skillId: 'fireball', level: 25 }
+        ],
+        resultSkill: 'flame_blade',
+        combinationType: 'merge'
+      },
+      {
+        id: 'elemental_mastery',
+        name: '원소 숙련',
+        description: '모든 원소 마법을 마스터한 자만이 얻을 수 있는 초월 스킬',
+        requiredSkills: [
+          { skillId: 'fireball', level: 50 },
+          { skillId: 'ice_shard', level: 50 },
+          { skillId: 'lightning_bolt', level: 50 },
+          { skillId: 'earth_spike', level: 50 }
+        ],
+        resultSkill: 'elemental_transcendence',
+        combinationType: 'transcend'
       }
+    ];
+  }
 
-      const playerSkill = playerSkills.get(skillId);
-      const isAvailable = await this.isSkillAvailable(skill, player);
+  /**
+   * 스킬 포인트 시스템 관리
+   */
+  getSkillPointSystem(player: Player): SkillPointSystem {
+    const pointsPerLevel = 3; // 레벨당 3 스킬 포인트
+    const totalPoints = player.level * pointsPerLevel;
+    
+    // 사용된 포인트 계산
+    let usedPoints = 0;
+    Object.values(player.skills).forEach(skill => {
+      usedPoints += this.calculateSkillPointCost(skill.id, skill.level);
+    });
 
-      const node: SkillTreeNode = {
-        skill,
-        isLearned: !!playerSkill,
-        currentLevel: playerSkill?.level || 0,
-        currentExperience: playerSkill?.experience || 0,
-        isAvailable,
-        connections: {
-          parents: skill.parentSkills || [],
-          children: skill.childSkills || []
-        }
+    // 보너스 포인트 (퀘스트, 업적 등)
+    const bonusPoints = this.calculateBonusSkillPoints(player);
+    
+    return {
+      totalPoints: totalPoints + bonusPoints,
+      usedPoints,
+      availablePoints: (totalPoints + bonusPoints) - usedPoints,
+      pointsPerLevel,
+      bonusPointSources: []
+    };
+  }
+
+  /**
+   * 스킬 레벨업에 필요한 포인트 계산 (레벨이 높을수록 더 많은 포인트 필요)
+   */
+  private calculateSkillPointCost(skillId: string, targetLevel: number): number {
+    let totalCost = 0;
+    for (let level = 1; level <= targetLevel; level++) {
+      // 기본 공식: 레벨^1.2
+      let levelCost = Math.floor(Math.pow(level, 1.2));
+      
+      // 고급 스킬일수록 더 비싼 비용
+      const skillRarity = this.getSkillRarity(skillId);
+      const rarityMultiplier = {
+        common: 1,
+        uncommon: 1.5,
+        rare: 2,
+        epic: 3,
+        legendary: 5,
+        transcendent: 10
       };
+      
+      levelCost *= (rarityMultiplier[skillRarity] || 1);
+      totalCost += levelCost;
+    }
+    return totalCost;
+  }
 
-      categories[categoryId].skills[skillId] = node;
+  /**
+   * 보너스 스킬 포인트 계산
+   */
+  private calculateBonusSkillPoints(player: Player): number {
+    let bonusPoints = 0;
+    
+    // 업적 기반 보너스
+    bonusPoints += Math.floor(player.level / 100) * 10; // 100레벨마다 10포인트
+    
+    // 퀘스트 완료 보너스 (예시)
+    // bonusPoints += completedQuests.filter(q => q.rewardType === 'skill_points').length;
+    
+    return bonusPoints;
+  }
+
+  /**
+   * 스킬 레벨업 처리
+   */
+  levelUpSkill(player: Player, skillId: string): {
+    success: boolean;
+    newLevel: number;
+    effectsGained: SkillEffect[];
+    evolutionAvailable?: SkillEvolution;
+    error?: string;
+  } {
+    const skill = player.skills[skillId];
+    if (!skill) {
+      return {
+        success: false,
+        newLevel: 0,
+        effectsGained: [],
+        error: '스킬을 찾을 수 없습니다.'
+      };
     }
 
-    const totalSkillPoints = player.level.skillPoints + 
-      player.skills.reduce((total, skill) => total + skill.level, 0);
+    // 최대 레벨 확인
+    const maxLevel = this.getSkillMaxLevel(skillId);
+    if (skill.level >= maxLevel) {
+      return {
+        success: false,
+        newLevel: skill.level,
+        effectsGained: [],
+        error: '이미 최대 레벨입니다.'
+      };
+    }
+
+    // 스킬 포인트 확인
+    const pointSystem = this.getSkillPointSystem(player);
+    const requiredPoints = this.calculateSkillPointCost(skillId, skill.level + 1) - 
+                          this.calculateSkillPointCost(skillId, skill.level);
+    
+    if (pointSystem.availablePoints < requiredPoints) {
+      return {
+        success: false,
+        newLevel: skill.level,
+        effectsGained: [],
+        error: '스킬 포인트가 부족합니다.'
+      };
+    }
+
+    // 전제조건 확인
+    const prerequisites = this.checkSkillPrerequisites(player, skillId, skill.level + 1);
+    if (!prerequisites.met) {
+      return {
+        success: false,
+        newLevel: skill.level,
+        effectsGained: [],
+        error: `전제조건 미충족: ${prerequisites.missing.join(', ')}`
+      };
+    }
+
+    // 레벨업 실행
+    skill.level += 1;
+    skill.experience = 0;
+    skill.requiredExperience = this.calculateRequiredExperience(skillId, skill.level + 1);
+
+    // 새로운 효과 계산
+    const effectsGained = this.getSkillEffectsAtLevel(skillId, skill.level);
+    
+    // 진화 가능 여부 확인
+    const evolutionAvailable = this.checkSkillEvolution(player, skillId);
+
+    logger.info(`스킬 레벨업: ${skillId} → 레벨 ${skill.level}`);
 
     return {
-      categories,
-      totalSkillPoints,
-      usedSkillPoints: player.skills.reduce((total, skill) => total + skill.level, 0),
-      availableSkillPoints: player.level.skillPoints
+      success: true,
+      newLevel: skill.level,
+      effectsGained,
+      evolutionAvailable
     };
   }
 
-  private async checkSkillRequirements(skill: Skill, player: Player): Promise<{
+  /**
+   * 스킬 경험치 추가 및 자동 레벨업
+   */
+  addSkillExperience(player: Player, skillId: string, experience: number): {
+    levelsGained: number;
+    newLevel: number;
+    effectsGained: SkillEffect[];
+  } {
+    const skill = player.skills[skillId];
+    if (!skill) {
+      return { levelsGained: 0, newLevel: 0, effectsGained: [] };
+    }
+
+    skill.experience += experience;
+    let levelsGained = 0;
+    const effectsGained: SkillEffect[] = [];
+
+    // 자동 레벨업 처리
+    while (skill.experience >= skill.requiredExperience && 
+           skill.level < this.getSkillMaxLevel(skillId)) {
+      
+      // 스킬 포인트가 있는 경우에만 자동 레벨업
+      const pointSystem = this.getSkillPointSystem(player);
+      const requiredPoints = this.calculateSkillPointCost(skillId, skill.level + 1) - 
+                            this.calculateSkillPointCost(skillId, skill.level);
+      
+      if (pointSystem.availablePoints >= requiredPoints) {
+        skill.experience -= skill.requiredExperience;
+        skill.level += 1;
+        levelsGained += 1;
+        
+        const newEffects = this.getSkillEffectsAtLevel(skillId, skill.level);
+        effectsGained.push(...newEffects);
+        
+        skill.requiredExperience = this.calculateRequiredExperience(skillId, skill.level + 1);
+      } else {
+        break; // 포인트 부족시 경험치만 누적
+      }
+    }
+
+    return {
+      levelsGained,
+      newLevel: skill.level,
+      effectsGained
+    };
+  }
+
+  /**
+   * 스킬 진화 처리
+   */
+  evolveSkill(player: Player, evolution: SkillEvolution): {
     success: boolean;
-    message: string;
-  }> {
-    for (const requirement of skill.requirements) {
-      switch (requirement.type) {
-        case 'level':
-          if (player.level.level < (requirement.value as number)) {
-            return { 
-              success: false, 
-              message: `레벨 ${requirement.value} 이상이 필요합니다.` 
-            };
-          }
-          break;
-
-        case 'skill':
-          const reqSkillId = requirement.value as string;
-          const reqLevel = requirement.amount || 1;
-          const playerSkill = player.skills.find(s => s.skillId === reqSkillId);
-          
-          if (!playerSkill || playerSkill.level < reqLevel) {
-            const reqSkill = await gameDataManager.getSkill(reqSkillId);
-            return { 
-              success: false, 
-              message: `${reqSkill?.name || reqSkillId} 스킬 레벨 ${reqLevel} 이상이 필요합니다.` 
-            };
-          }
-          break;
-
-        case 'stat':
-          const statName = requirement.value as keyof typeof player.stats;
-          const requiredValue = requirement.amount || 0;
-          
-          if (player.stats[statName] < requiredValue) {
-            return { 
-              success: false, 
-              message: `${statName.toUpperCase()} ${requiredValue} 이상이 필요합니다.` 
-            };
-          }
-          break;
-
-        case 'item':
-          const itemId = requirement.value as string;
-          const requiredQuantity = requirement.amount || 1;
-          const playerItem = player.inventory.find(item => item.itemId === itemId);
-          
-          if (!playerItem || playerItem.quantity < requiredQuantity) {
-            return { 
-              success: false, 
-              message: `${itemId} 아이템 ${requiredQuantity}개가 필요합니다.` 
-            };
-          }
-          break;
-
-        case 'class':
-          if (player.info.class !== requirement.value) {
-            return { 
-              success: false, 
-              message: `${requirement.value} 클래스만 학습할 수 있습니다.` 
-            };
-          }
-          break;
-      }
+    evolvedSkill: string;
+    error?: string;
+  } {
+    const baseSkill = player.skills[evolution.baseSkillId];
+    if (!baseSkill || baseSkill.level < evolution.requirements.level) {
+      return {
+        success: false,
+        evolvedSkill: '',
+        error: '기본 스킬 레벨이 부족합니다.'
+      };
     }
 
-    return { success: true, message: '' };
-  }
-
-  private async isSkillAvailable(skill: Skill, player: Player): Promise<boolean> {
-    const requirementCheck = await this.checkSkillRequirements(skill, player);
-    return requirementCheck.success;
-  }
-
-  private calculateRequiredExperience(skill: Skill, currentLevel: number): number {
-    return Math.floor(skill.baseExperience * Math.pow(skill.experienceMultiplier, currentLevel - 1));
-  }
-
-  private calculateSkillEffectsAtLevel(skill: Skill, level: number) {
-    // 레벨에 따른 스킬 효과 계산
-    return skill.effects.map(effect => ({
-      ...effect,
-      value: effect.value * (1 + (level - 1) * 0.1) // 레벨당 10% 증가
-    }));
-  }
-
-  private async checkUnlockedSkills(player: Player, parentSkillId: string, newLevel: number): Promise<string[]> {
-    const unlockedSkills: string[] = [];
-    const allSkills = await gameDataManager.loadAllSkills();
-
-    for (const [skillId, skill] of allSkills) {
-      if (skill.parentSkills?.includes(parentSkillId)) {
-        const isAvailable = await this.isSkillAvailable(skill, player);
-        if (isAvailable) {
-          unlockedSkills.push(skillId);
-        }
-      }
-    }
-
-    return unlockedSkills;
-  }
-
-  private async checkEvolutionRequirements(evolution: SkillEvolution, player: Player): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    for (const requirement of evolution.requirements) {
-      const check = await this.checkSkillRequirements({ requirements: [requirement] } as Skill, player);
-      if (!check.success) {
-        return check;
-      }
-    }
-
-    // 재료 확인
-    if (evolution.materials) {
-      for (const material of evolution.materials) {
-        const playerItem = player.inventory.find(item => item.itemId === material.itemId);
-        if (!playerItem || playerItem.quantity < material.quantity) {
-          return { 
-            success: false, 
-            message: `${material.itemId} 아이템이 부족합니다. (필요: ${material.quantity})` 
+    // 다른 스킬 요구사항 확인
+    if (evolution.requirements.otherSkills) {
+      for (const req of evolution.requirements.otherSkills) {
+        const requiredSkill = player.skills[req.skillId];
+        if (!requiredSkill || requiredSkill.level < req.level) {
+          return {
+            success: false,
+            evolvedSkill: '',
+            error: `필요 스킬 미충족: ${req.skillId} 레벨 ${req.level}`
           };
         }
       }
     }
 
-    return { success: true, message: '' };
+    // 스탯 요구사항 확인
+    if (evolution.requirements.stats) {
+      for (const [stat, required] of Object.entries(evolution.requirements.stats)) {
+        if ((player.stats as any)[stat] < required) {
+          return {
+            success: false,
+            evolvedSkill: '',
+            error: `스탯 부족: ${stat} ${required} 필요`
+          };
+        }
+      }
+    }
+
+    // 진화 실행
+    delete player.skills[evolution.baseSkillId];
+    player.skills[evolution.evolvedSkillId] = {
+      id: evolution.evolvedSkillId,
+      level: 1,
+      experience: 0,
+      requiredExperience: this.calculateRequiredExperience(evolution.evolvedSkillId, 2),
+      effects: this.getSkillEffectsAtLevel(evolution.evolvedSkillId, 1)
+    };
+
+    logger.info(`스킬 진화: ${evolution.baseSkillId} → ${evolution.evolvedSkillId}`);
+
+    return {
+      success: true,
+      evolvedSkill: evolution.evolvedSkillId
+    };
   }
 
-  private getCategoryName(categoryId: string): string {
-    const names: Record<string, string> = {
-      combat: '전투',
-      magic: '마법',
-      utility: '유틸리티',
-      crafting: '제작',
-      movement: '이동'
+  /**
+   * 스킬 조합 처리
+   */
+  combineSkills(player: Player, combination: SkillCombination): {
+    success: boolean;
+    newSkill: string;
+    error?: string;
+  } {
+    // 필요 스킬 확인
+    for (const req of combination.requiredSkills) {
+      const skill = player.skills[req.skillId];
+      if (!skill || skill.level < req.level) {
+        return {
+          success: false,
+          newSkill: '',
+          error: `필요 스킬 미충족: ${req.skillId} 레벨 ${req.level}`
+        };
+      }
+    }
+
+    // 조합 타입에 따른 처리
+    switch (combination.combinationType) {
+      case 'merge':
+        // 원본 스킬들은 유지하고 새 스킬 추가
+        break;
+      case 'evolve':
+        // 일부 스킬을 소모하고 새 스킬 생성
+        combination.requiredSkills.forEach(req => {
+          if (player.skills[req.skillId]) {
+            player.skills[req.skillId].level = Math.max(0, 
+              player.skills[req.skillId].level - Math.floor(req.level / 2)
+            );
+          }
+        });
+        break;
+      case 'transcend':
+        // 모든 관련 스킬을 최대 레벨로 만들고 초월 스킬 생성
+        combination.requiredSkills.forEach(req => {
+          if (player.skills[req.skillId]) {
+            delete player.skills[req.skillId];
+          }
+        });
+        break;
+    }
+
+    // 새 스킬 생성
+    player.skills[combination.resultSkill] = {
+      id: combination.resultSkill,
+      level: 1,
+      experience: 0,
+      requiredExperience: this.calculateRequiredExperience(combination.resultSkill, 2),
+      effects: this.getSkillEffectsAtLevel(combination.resultSkill, 1)
     };
-    return names[categoryId] || categoryId;
+
+    logger.info(`스킬 조합: ${combination.name} → ${combination.resultSkill}`);
+
+    return {
+      success: true,
+      newSkill: combination.resultSkill
+    };
   }
 
-  private getCategoryDescription(categoryId: string): string {
-    const descriptions: Record<string, string> = {
-      combat: '근접 전투 관련 스킬',
-      magic: '마법 공격 관련 스킬',
-      utility: '보조 및 지원 스킬',
-      crafting: '아이템 제작 스킬',
-      movement: '이동 및 탐험 스킬'
-    };
-    return descriptions[categoryId] || '';
+  /**
+   * 스킬 효과 스택 시스템
+   */
+  addSkillEffectStack(playerId: string, skillId: string, effectType: string): void {
+    if (!this.playerSkillStacks.has(playerId)) {
+      this.playerSkillStacks.set(playerId, []);
+    }
+
+    const stacks = this.playerSkillStacks.get(playerId)!;
+    let existingStack = stacks.find(s => s.skillId === skillId && s.effectType === effectType);
+
+    if (existingStack) {
+      // 기존 스택 증가
+      existingStack.stacks = Math.min(existingStack.maxStacks, existingStack.stacks + 1);
+      existingStack.duration = existingStack.stackDecayTime; // 지속시간 리셋
+    } else {
+      // 새 스택 생성
+      const newStack: SkillEffectStack = {
+        skillId,
+        effectType,
+        stacks: 1,
+        maxStacks: this.getMaxStacksForEffect(skillId, effectType),
+        duration: this.getStackDuration(skillId, effectType),
+        stackDecayTime: this.getStackDuration(skillId, effectType),
+        bonusPerStack: this.getBonusPerStack(skillId, effectType)
+      };
+      stacks.push(newStack);
+    }
   }
 
-  private getCategoryColor(categoryId: string): string {
-    const colors: Record<string, string> = {
-      combat: '#ff4444',
-      magic: '#4444ff',
-      utility: '#44ff44',
-      crafting: '#ffaa44',
-      movement: '#44ffff'
+  /**
+   * 스킬 효과 스택 업데이트 (시간 경과)
+   */
+  updateSkillEffectStacks(playerId: string, deltaTime: number): void {
+    const stacks = this.playerSkillStacks.get(playerId);
+    if (!stacks) return;
+
+    for (let i = stacks.length - 1; i >= 0; i--) {
+      const stack = stacks[i];
+      stack.duration -= deltaTime;
+
+      if (stack.duration <= 0) {
+        stack.stacks -= 1;
+        if (stack.stacks <= 0) {
+          stacks.splice(i, 1); // 스택 제거
+        } else {
+          stack.duration = stack.stackDecayTime; // 다음 스택 감소 시간 설정
+        }
+      }
+    }
+  }
+
+  /**
+   * 동적 스킬 트리 확장
+   */
+  expandSkillTree(treeType: string, newSkills: SkillTreeNode[]): void {
+    const tree = this.skillTrees.get(treeType) || [];
+    tree.push(...newSkills);
+    this.skillTrees.set(treeType, tree);
+    
+    logger.info(`스킬 트리 확장: ${treeType}에 ${newSkills.length}개 스킬 추가`);
+  }
+
+  /**
+   * 무한 스킬 트리 생성 (절차적 생성)
+   */
+  generateProceduralSkillBranch(baseSkillId: string, depth: number = 5): SkillTreeNode[] {
+    const newBranch: SkillTreeNode[] = [];
+    
+    for (let i = 0; i < depth; i++) {
+      const newSkill: SkillTreeNode = {
+        skillId: `${baseSkillId}_evolved_${i + 1}`,
+        level: 0,
+        maxLevel: Math.max(10, 50 - (i * 10)), // 진화할수록 최대 레벨 감소
+        children: [],
+        parents: i === 0 ? [baseSkillId] : [`${baseSkillId}_evolved_${i}`],
+        position: { x: i + 1, y: Math.floor(Math.random() * 3) },
+        unlocked: false,
+        experience: 0,
+        requiredExperience: 100 * Math.pow(2, i)
+      };
+      newBranch.push(newSkill);
+    }
+
+    return newBranch;
+  }
+
+  // 헬퍼 함수들
+  private getSkillRarity(skillId: string): 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'transcendent' {
+    // 스킬 ID 기반으로 희소성 결정 (실제로는 데이터에서 가져와야 함)
+    if (skillId.includes('transcendent') || skillId.includes('divine')) return 'transcendent';
+    if (skillId.includes('legendary') || skillId.includes('ultimate')) return 'legendary';
+    if (skillId.includes('epic') || skillId.includes('master')) return 'epic';
+    if (skillId.includes('rare') || skillId.includes('advanced')) return 'rare';
+    if (skillId.includes('uncommon') || skillId.includes('improved')) return 'uncommon';
+    return 'common';
+  }
+
+  private getSkillMaxLevel(skillId: string): number {
+    // 스킬별 최대 레벨 (기본값은 100, 특별한 스킬은 더 낮을 수 있음)
+    const rarity = this.getSkillRarity(skillId);
+    const baseLevels = {
+      common: 100,
+      uncommon: 75,
+      rare: 50,
+      epic: 25,
+      legendary: 10,
+      transcendent: 5
     };
-    return colors[categoryId] || '#888888';
+    return baseLevels[rarity];
+  }
+
+  private calculateRequiredExperience(skillId: string, level: number): number {
+    const baseExp = 100;
+    const rarity = this.getSkillRarity(skillId);
+    const rarityMultiplier = {
+      common: 1,
+      uncommon: 1.5,
+      rare: 2.5,
+      epic: 4,
+      legendary: 7,
+      transcendent: 12
+    };
+    
+    return Math.floor(baseExp * Math.pow(level, 1.3) * (rarityMultiplier[rarity] || 1));
+  }
+
+  private checkSkillPrerequisites(player: Player, skillId: string, targetLevel: number): {
+    met: boolean;
+    missing: string[];
+  } {
+    // 기본적인 전제조건 체크 (실제로는 더 복잡한 로직)
+    return { met: true, missing: [] };
+  }
+
+  private getSkillEffectsAtLevel(skillId: string, level: number): SkillEffect[] {
+    // 레벨별 스킬 효과 반환 (실제로는 데이터에서 가져와야 함)
+    return [];
+  }
+
+  private checkSkillEvolution(player: Player, skillId: string): SkillEvolution | undefined {
+    return this.skillEvolutions.find(evo => 
+      evo.baseSkillId === skillId && 
+      player.skills[skillId]?.level >= evo.requirements.level
+    );
+  }
+
+  private getMaxStacksForEffect(skillId: string, effectType: string): number {
+    return 10; // 기본값
+  }
+
+  private getStackDuration(skillId: string, effectType: string): number {
+    return 30000; // 30초
+  }
+
+  private getBonusPerStack(skillId: string, effectType: string): number {
+    return 1; // 스택당 1% 보너스
+  }
+
+  /**
+   * 스킬 트리 전체 상태 반환
+   */
+  getSkillTreeState(player: Player, treeType: string): {
+    nodes: SkillTreeNode[];
+    availableEvolutions: SkillEvolution[];
+    availableCombinations: SkillCombination[];
+    pointSystem: SkillPointSystem;
+  } {
+    const nodes = this.skillTrees.get(treeType) || [];
+    const availableEvolutions = this.skillEvolutions.filter(evo => 
+      player.skills[evo.baseSkillId] && 
+      player.skills[evo.baseSkillId].level >= evo.requirements.level
+    );
+    
+    const availableCombinations = this.skillCombinations.filter(combo =>
+      combo.requiredSkills.every(req => 
+        player.skills[req.skillId] && 
+        player.skills[req.skillId].level >= req.level
+      )
+    );
+
+    return {
+      nodes,
+      availableEvolutions,
+      availableCombinations,
+      pointSystem: this.getSkillPointSystem(player)
+    };
   }
 }
 
-// 싱글톤 인스턴스
-export const skillSystem = new SkillSystem();
+// 전역 스킬 트리 시스템 인스턴스
+export const skillTreeSystem = new SkillTreeSystem();
+
+// 스킬 관련 유틸리티 함수들
+export const skillUtils = {
+  /**
+   * 스킬 효과 계산
+   */
+  calculateSkillDamage(skill: any, playerStats: Stats): number {
+    // 기본 스킬 데미지 계산 로직
+    let baseDamage = skill.baseDamage || 0;
+    let scalingStats = skill.scaling || {};
+    
+    Object.entries(scalingStats).forEach(([stat, ratio]: [string, any]) => {
+      baseDamage += (playerStats as any)[stat] * ratio;
+    });
+
+    return Math.floor(baseDamage * (1 + skill.level * 0.1)); // 레벨당 10% 증가
+  },
+
+  /**
+   * 스킬 쿨다운 계산
+   */
+  calculateCooldown(skill: any, playerStats: Stats): number {
+    let baseCooldown = skill.cooldown || 0;
+    let cooldownReduction = 0;
+
+    // CDR 계산 (예: 민첩성 기반)
+    cooldownReduction = playerStats.dex * 0.001; // DEX 1000당 100% CDR
+
+    return Math.max(0.1, baseCooldown * (1 - cooldownReduction));
+  },
+
+  /**
+   * 스킬 시너지 계산
+   */
+  calculateSkillSynergy(playerSkills: Record<string, any>): number {
+    let synergyBonus = 0;
+    const skillIds = Object.keys(playerSkills);
+
+    // 관련 스킬들 간의 시너지 보너스
+    if (skillIds.includes('fireball') && skillIds.includes('ice_shard')) {
+      synergyBonus += 0.25; // 25% 원소 시너지
+    }
+
+    return synergyBonus;
+  }
+};

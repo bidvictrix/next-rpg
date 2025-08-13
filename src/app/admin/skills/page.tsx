@@ -1,243 +1,74 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, useModal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
-
-// 스킬 인터페이스
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  type: 'active' | 'passive' | 'toggle';
-  category: 'combat' | 'magic' | 'support' | 'passive' | 'utility';
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
-  maxLevel: number;
-  baseExperience: number;
-  experienceMultiplier: number;
-  cooldown?: number;
-  manaCost?: number;
-  effects: SkillEffect[];
-  requirements: SkillRequirement[];
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  usageCount: number; // 플레이어들이 사용한 횟수
-}
-
-interface SkillEffect {
-  id: string;
-  type: 'damage' | 'heal' | 'buff' | 'debuff' | 'utility';
-  target: 'self' | 'enemy' | 'ally' | 'all';
-  value: number;
-  stat?: string;
-  duration?: number;
-  description: string;
-}
-
-interface SkillRequirement {
-  id: string;
-  type: 'level' | 'skill' | 'stat' | 'item' | 'quest';
-  target: string;
-  value: number;
-  description: string;
-}
-
-// 더미 스킬 데이터 생성
-const createDummySkills = (): Skill[] => {
-  const skills: Skill[] = [
-    {
-      id: 'basic_attack',
-      name: '기본 공격',
-      description: '가장 기본적인 물리 공격입니다.',
-      icon: '⚔️',
-      type: 'active',
-      category: 'combat',
-      rarity: 'common',
-      maxLevel: 10,
-      baseExperience: 100,
-      experienceMultiplier: 1.5,
-      cooldown: 0,
-      manaCost: 0,
-      effects: [
-        {
-          id: 'effect1',
-          type: 'damage',
-          target: 'enemy',
-          value: 100,
-          description: '적에게 100% 공격력의 물리 데미지'
-        }
-      ],
-      requirements: [],
-      isActive: true,
-      createdAt: new Date('2025-01-01'),
-      updatedAt: new Date('2025-08-10'),
-      usageCount: 15420
-    },
-    {
-      id: 'fireball',
-      name: '파이어볼',
-      description: '화염구를 발사하여 적에게 화염 데미지를 입힙니다.',
-      icon: '🔥',
-      type: 'active',
-      category: 'magic',
-      rarity: 'uncommon',
-      maxLevel: 10,
-      baseExperience: 150,
-      experienceMultiplier: 1.8,
-      cooldown: 3,
-      manaCost: 20,
-      effects: [
-        {
-          id: 'effect2',
-          type: 'damage',
-          target: 'enemy',
-          value: 160,
-          description: '적에게 160% 지능의 화염 데미지'
-        }
-      ],
-      requirements: [
-        {
-          id: 'req1',
-          type: 'level',
-          target: 'player',
-          value: 5,
-          description: '플레이어 레벨 5 이상'
-        }
-      ],
-      isActive: true,
-      createdAt: new Date('2025-01-05'),
-      updatedAt: new Date('2025-08-12'),
-      usageCount: 8730
-    },
-    {
-      id: 'heal',
-      name: '치료',
-      description: 'HP를 회복합니다.',
-      icon: '✨',
-      type: 'active',
-      category: 'support',
-      rarity: 'common',
-      maxLevel: 10,
-      baseExperience: 120,
-      experienceMultiplier: 1.6,
-      cooldown: 5,
-      manaCost: 25,
-      effects: [
-        {
-          id: 'effect3',
-          type: 'heal',
-          target: 'self',
-          value: 50,
-          stat: 'hp',
-          description: 'HP를 50 + 지능 × 2만큼 회복'
-        }
-      ],
-      requirements: [
-        {
-          id: 'req2',
-          type: 'stat',
-          target: 'int',
-          value: 15,
-          description: '지능 15 이상'
-        }
-      ],
-      isActive: true,
-      createdAt: new Date('2025-01-10'),
-      updatedAt: new Date('2025-08-08'),
-      usageCount: 12450
-    },
-    {
-      id: 'critical_mastery',
-      name: '치명타 숙련',
-      description: '치명타 확률이 영구적으로 증가합니다.',
-      icon: '🎯',
-      type: 'passive',
-      category: 'passive',
-      rarity: 'rare',
-      maxLevel: 5,
-      baseExperience: 300,
-      experienceMultiplier: 2.0,
-      effects: [
-        {
-          id: 'effect4',
-          type: 'buff',
-          target: 'self',
-          value: 5,
-          stat: 'crit',
-          description: '치명타 확률 +5%'
-        }
-      ],
-      requirements: [
-        {
-          id: 'req3',
-          type: 'skill',
-          target: 'basic_attack',
-          value: 5,
-          description: '기본 공격 레벨 5 이상'
-        }
-      ],
-      isActive: true,
-      createdAt: new Date('2025-01-15'),
-      updatedAt: new Date('2025-08-05'),
-      usageCount: 3420
-    },
-    {
-      id: 'mana_shield',
-      name: '마나 방패',
-      description: 'MP로 데미지를 흡수합니다.',
-      icon: '🛡️',
-      type: 'toggle',
-      category: 'magic',
-      rarity: 'epic',
-      maxLevel: 5,
-      baseExperience: 250,
-      experienceMultiplier: 2.2,
-      manaCost: 2,
-      effects: [
-        {
-          id: 'effect5',
-          type: 'utility',
-          target: 'self',
-          value: 50,
-          description: '받는 데미지의 50%를 MP로 대신 받음'
-        }
-      ],
-      requirements: [
-        {
-          id: 'req4',
-          type: 'stat',
-          target: 'int',
-          value: 30,
-          description: '지능 30 이상'
-        }
-      ],
-      isActive: false,
-      createdAt: new Date('2025-02-01'),
-      updatedAt: new Date('2025-08-01'),
-      usageCount: 1250
-    }
-  ];
-
-  return skills;
-};
+import { Skill, SkillEffect, SkillRequirement, SkillCategory } from '@/types/skills';
 
 export default function SkillsEditor() {
-  const [skills, setSkills] = useState<Skill[]>(createDummySkills());
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [categories, setCategories] = useState<SkillCategory[]>([]);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<SkillCategory | null>(null);
   const [editingSkill, setEditingSkill] = useState<Partial<Skill>>({});
+  const [editingCategory, setEditingCategory] = useState<Partial<SkillCategory>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   
   const { isOpen: editModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: deleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
   const { isOpen: previewModalOpen, openModal: openPreviewModal, closeModal: closePreviewModal } = useModal();
+  const { isOpen: categoryModalOpen, openModal: openCategoryModal, closeModal: closeCategoryModal } = useModal();
+
+  // 스킬 데이터 로드
+  const loadSkills = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/skills');
+      const result = await response.json();
+      
+      if (result.success) {
+        setSkills(result.data || []);
+      } else {
+        console.error('스킬 로드 실패:', result.error);
+        alert('스킬 데이터를 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('스킬 로드 에러:', error);
+      alert('서버 연결 오류가 발생했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 카테고리 데이터 로드
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/skills/categories');
+      const result = await response.json();
+      
+      if (result.success) {
+        setCategories(result.data || []);
+      } else {
+        console.error('카테고리 로드 실패:', result.error);
+      }
+    } catch (error) {
+      console.error('카테고리 로드 에러:', error);
+    }
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    loadSkills();
+    loadCategories();
+  }, []);
 
   // 필터링된 스킬 목록
   const filteredSkills = useMemo(() => {
@@ -247,8 +78,8 @@ export default function SkillsEditor() {
       const matchesCategory = categoryFilter === 'all' || skill.category === categoryFilter;
       const matchesType = typeFilter === 'all' || skill.type === typeFilter;
       const matchesStatus = statusFilter === 'all' || 
-                           (statusFilter === 'active' && skill.isActive) ||
-                           (statusFilter === 'inactive' && !skill.isActive);
+                           (statusFilter === 'active' && skill.isActive !== false) ||
+                           (statusFilter === 'inactive' && skill.isActive === false);
       
       return matchesSearch && matchesCategory && matchesType && matchesStatus;
     });
@@ -257,7 +88,7 @@ export default function SkillsEditor() {
   // 스킬 통계
   const skillStats = useMemo(() => {
     const total = skills.length;
-    const active = skills.filter(s => s.isActive).length;
+    const active = skills.filter(s => s.isActive !== false).length;
     const byCategory = skills.reduce((acc, skill) => {
       acc[skill.category] = (acc[skill.category] || 0) + 1;
       return acc;
@@ -272,7 +103,7 @@ export default function SkillsEditor() {
 
   // 새 스킬 생성
   const createNewSkill = () => {
-    const newSkill: Skill = {
+    const newSkill: Partial<Skill> = {
       id: `skill_${Date.now()}`,
       name: '새 스킬',
       description: '새로운 스킬입니다.',
@@ -285,13 +116,10 @@ export default function SkillsEditor() {
       experienceMultiplier: 1.5,
       effects: [],
       requirements: [],
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      usageCount: 0
+      isActive: true
     };
     
-    setSelectedSkill(newSkill);
+    setSelectedSkill(null);
     setEditingSkill(newSkill);
     openEditModal();
   };
@@ -304,45 +132,145 @@ export default function SkillsEditor() {
   };
 
   // 스킬 저장
-  const saveSkill = () => {
-    if (!editingSkill.id) return;
+  const saveSkill = async () => {
+    if (!editingSkill.id || !editingSkill.name) {
+      alert('스킬 ID와 이름은 필수입니다.');
+      return;
+    }
 
-    setSkills(prev => {
-      const existingIndex = prev.findIndex(s => s.id === editingSkill.id);
-      const updatedSkill = {
-        ...editingSkill,
-        updatedAt: new Date()
-      } as Skill;
-
-      if (existingIndex >= 0) {
-        // 기존 스킬 업데이트
-        const newSkills = [...prev];
-        newSkills[existingIndex] = updatedSkill;
-        return newSkills;
+    try {
+      setIsSaving(true);
+      
+      const isNewSkill = !selectedSkill;
+      const url = '/api/skills';
+      const method = isNewSkill ? 'POST' : 'PUT';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingSkill),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadSkills(); // 데이터 새로고침
+        closeEditModal();
+        alert(result.message || '스킬이 성공적으로 저장되었습니다.');
       } else {
-        // 새 스킬 추가
-        return [...prev, updatedSkill];
+        alert(result.error || '스킬 저장에 실패했습니다.');
+        if (result.details) {
+          console.error('유효성 검사 오류:', result.details);
+        }
       }
-    });
-
-    closeEditModal();
+    } catch (error) {
+      console.error('스킬 저장 에러:', error);
+      alert('서버 연결 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 스킬 삭제
-  const deleteSkill = () => {
+  const deleteSkill = async () => {
     if (!selectedSkill) return;
 
-    setSkills(prev => prev.filter(s => s.id !== selectedSkill.id));
-    closeDeleteModal();
+    try {
+      setIsSaving(true);
+      
+      const response = await fetch(`/api/skills?id=${selectedSkill.id}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadSkills(); // 데이터 새로고침
+        closeDeleteModal();
+        alert(result.message || '스킬이 성공적으로 삭제되었습니다.');
+      } else {
+        alert(result.error || '스킬 삭제에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('스킬 삭제 에러:', error);
+      alert('서버 연결 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 스킬 활성/비활성 토글
-  const toggleSkillStatus = (skillId: string) => {
-    setSkills(prev => prev.map(skill => 
-      skill.id === skillId 
-        ? { ...skill, isActive: !skill.isActive, updatedAt: new Date() }
-        : skill
-    ));
+  const toggleSkillStatus = async (skill: Skill) => {
+    try {
+      const updatedSkill = { ...skill, isActive: !skill.isActive };
+      
+      const response = await fetch('/api/skills', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedSkill),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadSkills(); // 데이터 새로고침
+      } else {
+        alert(result.error || '스킬 상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('스킬 상태 변경 에러:', error);
+      alert('서버 연결 오류가 발생했습니다.');
+    }
+  };
+
+  // 카테고리 편집 열기
+  const openCategoryEdit = (category: SkillCategory) => {
+    setSelectedCategory(category);
+    setEditingCategory({ ...category });
+    openCategoryModal();
+  };
+
+  // 카테고리 저장
+  const saveCategory = async () => {
+    if (!editingCategory.id || !editingCategory.name) {
+      alert('카테고리 ID와 이름은 필수입니다.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      const isNewCategory = !selectedCategory;
+      const url = '/api/skills/categories';
+      const method = isNewCategory ? 'POST' : 'PUT';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingCategory),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        await loadCategories(); // 데이터 새로고침
+        closeCategoryModal();
+        alert(result.message || '카테고리가 성공적으로 저장되었습니다.');
+      } else {
+        alert(result.error || '카테고리 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('카테고리 저장 에러:', error);
+      alert('서버 연결 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 효과 추가
@@ -400,18 +328,42 @@ export default function SkillsEditor() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-lg text-gray-600">스킬 데이터를 불러오는 중...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">스킬 편집</h1>
-            <p className="text-gray-600">게임 스킬 생성 및 편집</p>
+            <h1 className="text-3xl font-bold">실시간 스킬 편집</h1>
+            <p className="text-gray-600">게임 스킬 실시간 생성, 수정 및 관리</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="secondary">
-              스킬 가져오기
+            <Button variant="secondary" onClick={loadSkills} disabled={isLoading}>
+              새로고침
+            </Button>
+            <Button variant="secondary" onClick={() => {
+              setSelectedCategory(null);
+              setEditingCategory({
+                id: `category_${Date.now()}`,
+                name: '새 카테고리',
+                description: '새로운 스킬 카테고리입니다.',
+                color: '#3b82f6',
+                skills: []
+              });
+              openCategoryModal();
+            }}>
+              카테고리 관리
             </Button>
             <Button variant="primary" onClick={createNewSkill}>
               새 스킬 생성
@@ -526,7 +478,7 @@ export default function SkillsEditor() {
                   <tr key={skill.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="text-2xl">{skill.icon}</div>
+                        <div className="text-2xl">{skill.icon || '⚔️'}</div>
                         <div>
                           <div className="font-medium">{skill.name}</div>
                           <div className={cn('text-sm font-medium', getRarityColor(skill.rarity))}>
@@ -545,18 +497,18 @@ export default function SkillsEditor() {
                       {skill.maxLevel}
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      {skill.usageCount.toLocaleString()}
+                      {(skill.usageCount || 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-4">
                       <span className={cn(
                         'px-2 py-1 rounded text-xs font-medium',
-                        skill.isActive ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
+                        skill.isActive !== false ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'
                       )}>
-                        {skill.isActive ? '활성' : '비활성'}
+                        {skill.isActive !== false ? '활성' : '비활성'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-sm">
-                      {skill.updatedAt.toLocaleDateString()}
+                      {skill.updatedAt ? new Date(skill.updatedAt).toLocaleDateString() : '-'}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
@@ -580,9 +532,9 @@ export default function SkillsEditor() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleSkillStatus(skill.id)}
+                          onClick={() => toggleSkillStatus(skill)}
                         >
-                          {skill.isActive ? '비활성화' : '활성화'}
+                          {skill.isActive !== false ? '비활성화' : '활성화'}
                         </Button>
                       </div>
                     </td>
@@ -597,24 +549,25 @@ export default function SkillsEditor() {
         <Modal
           isOpen={editModalOpen}
           onClose={closeEditModal}
-          title={editingSkill.id?.startsWith('skill_') ? '새 스킬 생성' : '스킬 편집'}
+          title={selectedSkill ? '스킬 편집' : '새 스킬 생성'}
           size="lg"
         >
           <div className="space-y-6 max-h-96 overflow-y-auto">
             {/* 기본 정보 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <label className="block text-sm font-medium mb-2">스킬 ID</label>
+                <Input
+                  value={editingSkill.id || ''}
+                  onChange={(e) => setEditingSkill(prev => ({ ...prev, id: e.target.value }))}
+                  disabled={!!selectedSkill}
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-2">스킬 이름</label>
                 <Input
                   value={editingSkill.name || ''}
                   onChange={(e) => setEditingSkill(prev => ({ ...prev, name: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">아이콘</label>
-                <Input
-                  value={editingSkill.icon || ''}
-                  onChange={(e) => setEditingSkill(prev => ({ ...prev, icon: e.target.value }))}
                 />
               </div>
             </div>
@@ -818,7 +771,7 @@ export default function SkillsEditor() {
                       </select>
                       <Input
                         placeholder="타겟"
-                        value={req.target}
+                        value={req.target || ''}
                         onChange={(e) => {
                           const newReqs = [...(editingSkill.requirements || [])];
                           newReqs[index] = { ...req, target: e.target.value };
@@ -828,7 +781,7 @@ export default function SkillsEditor() {
                       />
                       <Input
                         type="number"
-                        value={req.value}
+                        value={req.value as number}
                         onChange={(e) => {
                           const newReqs = [...(editingSkill.requirements || [])];
                           newReqs[index] = { ...req, value: parseInt(e.target.value) };
@@ -864,19 +817,25 @@ export default function SkillsEditor() {
           </div>
 
           <div className="flex gap-2 mt-6">
-            <Button variant="primary" onClick={saveSkill} className="flex-1">
-              저장
+            <Button 
+              variant="primary" 
+              onClick={saveSkill} 
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? '저장 중...' : '저장'}
             </Button>
-            <Button variant="ghost" onClick={closeEditModal}>
+            <Button variant="ghost" onClick={closeEditModal} disabled={isSaving}>
               취소
             </Button>
-            {!editingSkill.id?.startsWith('skill_') && (
+            {selectedSkill && (
               <Button
                 variant="danger"
                 onClick={() => {
                   closeEditModal();
                   openDeleteModal();
                 }}
+                disabled={isSaving}
               >
                 삭제
               </Button>
@@ -894,7 +853,7 @@ export default function SkillsEditor() {
           {selectedSkill && (
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-6xl mb-2">{selectedSkill.icon}</div>
+                <div className="text-6xl mb-2">{selectedSkill.icon || '⚔️'}</div>
                 <h3 className="text-xl font-bold">{selectedSkill.name}</h3>
                 <p className="text-gray-600">{selectedSkill.description}</p>
               </div>
@@ -981,13 +940,127 @@ export default function SkillsEditor() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="danger" onClick={deleteSkill} className="flex-1">
-                삭제
+              <Button 
+                variant="danger" 
+                onClick={deleteSkill} 
+                className="flex-1"
+                disabled={isSaving}
+              >
+                {isSaving ? '삭제 중...' : '삭제'}
               </Button>
-              <Button variant="ghost" onClick={closeDeleteModal} className="flex-1">
+              <Button variant="ghost" onClick={closeDeleteModal} className="flex-1" disabled={isSaving}>
                 취소
               </Button>
             </div>
+          </div>
+        </Modal>
+
+        {/* 카테고리 관리 모달 */}
+        <Modal
+          isOpen={categoryModalOpen}
+          onClose={closeCategoryModal}
+          title="카테고리 관리"
+          size="lg"
+        >
+          <div className="space-y-6">
+            {/* 기존 카테고리 목록 */}
+            <div>
+              <h3 className="font-medium mb-3">기존 카테고리</h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {categories.map(category => (
+                  <div key={category.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded" 
+                        style={{ backgroundColor: category.color }}
+                      ></div>
+                      <div>
+                        <div className="font-medium">{category.name}</div>
+                        <div className="text-sm text-gray-600">{category.description}</div>
+                        <div className="text-xs text-gray-500">
+                          {category.skills.length}개 스킬
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openCategoryEdit(category)}
+                    >
+                      편집
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 카테고리 편집 폼 */}
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-3">
+                {selectedCategory ? '카테고리 편집' : '새 카테고리 생성'}
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">카테고리 ID</label>
+                    <Input
+                      value={editingCategory.id || ''}
+                      onChange={(e) => setEditingCategory(prev => ({ ...prev, id: e.target.value }))}
+                      disabled={!!selectedCategory}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">카테고리 이름</label>
+                    <Input
+                      value={editingCategory.name || ''}
+                      onChange={(e) => setEditingCategory(prev => ({ ...prev, name: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">설명</label>
+                  <textarea
+                    className="w-full p-3 border rounded-md"
+                    rows={3}
+                    value={editingCategory.description || ''}
+                    onChange={(e) => setEditingCategory(prev => ({ ...prev, description: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">색상</label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={editingCategory.color || '#3b82f6'}
+                      onChange={(e) => setEditingCategory(prev => ({ ...prev, color: e.target.value }))}
+                      className="w-16 h-10 border rounded cursor-pointer"
+                    />
+                    <Input
+                      value={editingCategory.color || '#3b82f6'}
+                      onChange={(e) => setEditingCategory(prev => ({ ...prev, color: e.target.value }))}
+                      placeholder="#3b82f6"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-6">
+            <Button 
+              variant="primary" 
+              onClick={saveCategory} 
+              className="flex-1"
+              disabled={isSaving}
+            >
+              {isSaving ? '저장 중...' : '저장'}
+            </Button>
+            <Button variant="ghost" onClick={closeCategoryModal} disabled={isSaving}>
+              취소
+            </Button>
           </div>
         </Modal>
       </div>

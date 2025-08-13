@@ -291,7 +291,7 @@ export class SkillTreeSystem {
     evolutionAvailable?: SkillEvolution;
     error?: string;
   } {
-    const skillsMap = player.skills ?? {} as Record<string, any>;
+    const skillsMap = (player.skills ?? {}) as Record<string, { id: string; level: number; experience: number; requiredExperience: number; effects?: SkillEffect[] }>;
     const skill = skillsMap[skillId];
     if (!skill) {
       return {
@@ -367,7 +367,7 @@ export class SkillTreeSystem {
     newLevel: number;
     effectsGained: SkillEffect[];
   } {
-    const skill = (player.skills ?? {})[skillId];
+    const skill = (player.skills ?? {})[skillId] as { id: string; level: number; experience: number; requiredExperience: number } | undefined;
     if (!skill) {
       return { levelsGained: 0, newLevel: 0, effectsGained: [] };
     }
@@ -414,7 +414,7 @@ export class SkillTreeSystem {
     evolvedSkill: string;
     error?: string;
   } {
-    const skillsMap = player.skills ?? {} as Record<string, any>;
+    const skillsMap = (player.skills ?? {}) as Record<string, { id: string; level: number }>;
     const baseSkill = skillsMap[evolution.baseSkillId];
     if (!baseSkill || baseSkill.level < evolution.requirements.level) {
       return {
@@ -441,7 +441,7 @@ export class SkillTreeSystem {
     // 스탯 요구사항 확인
     if (evolution.requirements.stats) {
       for (const [stat, required] of Object.entries(evolution.requirements.stats)) {
-        if ((player.stats as any)[stat] < required) {
+        if ((player.stats as unknown as Record<string, number>)[stat] < required) {
           return {
             success: false,
             evolvedSkill: '',
@@ -452,9 +452,9 @@ export class SkillTreeSystem {
     }
 
     // 진화 실행
-    player.skills = player.skills ?? {} as any;
-    delete (player.skills as any)[evolution.baseSkillId];
-    (player.skills as any)[evolution.evolvedSkillId] = {
+    player.skills = (player.skills ?? {}) as Record<string, unknown>;
+    delete (player.skills as Record<string, unknown>)[evolution.baseSkillId];
+    (player.skills as Record<string, unknown>)[evolution.evolvedSkillId] = {
       id: evolution.evolvedSkillId,
       level: 1,
       experience: 0,
@@ -480,7 +480,7 @@ export class SkillTreeSystem {
   } {
     // 필요 스킬 확인
     for (const req of combination.requiredSkills) {
-      const skillsMap = player.skills ?? {} as Record<string, any>;
+      const skillsMap = (player.skills ?? {}) as Record<string, { level: number }>;
       const skill = skillsMap[req.skillId];
       if (!skill || skill.level < req.level) {
         return {
@@ -499,7 +499,7 @@ export class SkillTreeSystem {
       case 'evolve':
         // 일부 스킬을 소모하고 새 스킬 생성
         combination.requiredSkills.forEach(req => {
-          const skillsMap = player.skills ?? {} as Record<string, any>;
+          const skillsMap = (player.skills ?? {}) as Record<string, { level: number }>;
           if (skillsMap[req.skillId]) {
             skillsMap[req.skillId].level = Math.max(0, 
               skillsMap[req.skillId].level - Math.floor(req.level / 2)
@@ -510,7 +510,7 @@ export class SkillTreeSystem {
       case 'transcend':
         // 모든 관련 스킬을 최대 레벨로 만들고 초월 스킬 생성
         combination.requiredSkills.forEach(req => {
-          const skillsMap = player.skills ?? {} as Record<string, any>;
+          const skillsMap = (player.skills ?? {}) as Record<string, unknown>;
           if (skillsMap[req.skillId]) {
             delete skillsMap[req.skillId];
           }
@@ -519,8 +519,8 @@ export class SkillTreeSystem {
     }
 
     // 새 스킬 생성
-    player.skills = player.skills ?? {} as any;
-    (player.skills as any)[combination.resultSkill] = {
+    player.skills = (player.skills ?? {}) as Record<string, unknown>;
+    (player.skills as Record<string, unknown>)[combination.resultSkill] = {
       id: combination.resultSkill,
       level: 1,
       experience: 0,
@@ -734,13 +734,13 @@ export const skillUtils = {
   /**
    * 스킬 효과 계산
    */
-  calculateSkillDamage(skill: any, playerStats: Stats): number {
+  calculateSkillDamage(skill: { effects?: Array<{ scaling?: { stat: string; ratio: number } }>; baseDamage?: number }, playerStats: Stats): number {
     // 기본 스킬 데미지 계산 로직
     let baseDamage = skill.baseDamage || 0;
     let scalingStats = skill.scaling || {};
     
-    Object.entries(scalingStats).forEach(([stat, ratio]: [string, any]) => {
-      baseDamage += (playerStats as any)[stat] * ratio;
+    Object.entries(scalingStats).forEach(([stat, ratio]: [string, number]) => {
+      baseDamage += (playerStats as unknown as Record<string, number>)[stat] * ratio;
     });
 
     return Math.floor(baseDamage * (1 + skill.level * 0.1)); // 레벨당 10% 증가
@@ -749,7 +749,7 @@ export const skillUtils = {
   /**
    * 스킬 쿨다운 계산
    */
-  calculateCooldown(skill: any, playerStats: Stats): number {
+  calculateCooldown(skill: { cooldown?: number; effects?: Array<{ duration?: number }> }, playerStats: Stats): number {
     let baseCooldown = skill.cooldown || 0;
     let cooldownReduction = 0;
 
@@ -762,7 +762,7 @@ export const skillUtils = {
   /**
    * 스킬 시너지 계산
    */
-  calculateSkillSynergy(playerSkills: Record<string, any>): number {
+  calculateSkillSynergy(playerSkills: Record<string, { level?: number }>): number {
     let synergyBonus = 0;
     const skillIds = Object.keys(playerSkills);
 

@@ -628,7 +628,7 @@ export const BattleInterface: React.FC<BattleInterfaceProps> = ({
 
       {/* 전투 결과 모달 */}
       <BattleResultModal
-        result={battleResult}
+        result={battleResult ?? null}
         isOpen={resultModalOpen}
         onClose={handleResultModalClose}
       />

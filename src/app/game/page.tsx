@@ -278,7 +278,24 @@ export default function GamePage() {
                 onlineStatus: 'online',
                 location: player.location.mapName
               }}
-              stats={player.stats}
+              stats={{
+                str: player.stats.str,
+                dex: player.stats.dex,
+                int: player.stats.int,
+                vit: player.stats.vit,
+                luk: player.stats.luk,
+                hp: player.stats.hp ?? 0,
+                maxHp: player.stats.maxHp ?? player.stats.hp ?? 0,
+                mp: player.stats.mp ?? 0,
+                maxMp: player.stats.maxMp ?? player.stats.mp ?? 0,
+                atk: player.stats.atk ?? 0,
+                def: player.stats.def ?? 0,
+                acc: player.stats.acc ?? 0,
+                eva: player.stats.eva ?? 0,
+                crit: player.stats.crit ?? 0,
+                statPoints: player.level.statPoints,
+                skillPoints: player.level.skillPoints
+              }}
               statusEffects={[]}
               gold={player.gold}
               onStatIncrease={handleStatIncrease}

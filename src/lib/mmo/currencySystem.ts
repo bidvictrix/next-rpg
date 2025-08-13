@@ -52,7 +52,7 @@ interface CurrencyTransaction {
   balanceAfter: number;
   source: string;
   description: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   timestamp: Date;
   relatedTransactionId?: string; // 연관 거래 (교환 등)
 }

@@ -88,7 +88,7 @@ export async function indexDataFile(
     const checksum = calculateChecksum(fileContent);
     
     // 데이터 타입에 따른 처리
-    let items: Record<string, any> = {};
+    let items: Record<string, unknown> = {};
     
     switch (type) {
       case 'skills':
@@ -110,7 +110,8 @@ export async function indexDataFile(
     
     // 각 항목에 대한 인덱스 엔트리 생성
     for (const [key, item] of Object.entries(items)) {
-      const itemId = item[idField] || key;
+    const itemRecord = item as Record<string, unknown>;
+    const itemId = (itemRecord[idField] as string) || key;
       
       index[type][itemId] = {
         id: itemId,
@@ -185,7 +186,7 @@ export async function searchByIndex(
   type: keyof DataIndex,
   query: {
     id?: string;
-    filters?: Record<string, any>;
+    filters?: Record<string, unknown>;
     limit?: number;
     offset?: number;
   }
@@ -308,7 +309,7 @@ export async function optimizeIndex(): Promise<void> {
         }
       }
       
-      (index as any)[type] = cleanedIndex;
+    (index as unknown as Record<string, unknown>)[type] = cleanedIndex as unknown as unknown;
     }
     
     if (optimized) {

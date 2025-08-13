@@ -2,19 +2,19 @@
  * 데이터 검증 시스템
  */
 
-import { Player, Stats, Equipment, InventoryItem } from '../types/player';
+import { Player, Stats } from '../types/player';
 import { Item, Monster, Quest, Skill } from '../types/game';
 import { ValidationUtils } from './utils';
 
 // 검증 규칙 인터페이스
-export interface ValidationRule<T = any> {
+export interface ValidationRule<T = Record<string, unknown>> {
   field: keyof T;
   required?: boolean;
   type?: 'string' | 'number' | 'boolean' | 'array' | 'object';
   min?: number;
   max?: number;
   pattern?: RegExp;
-  custom?: (value: any) => boolean | string;
+  custom?: (value: unknown) => boolean | string;
   message?: string;
 }
 
@@ -28,13 +28,13 @@ export interface ValidationResult {
 export interface ValidationError {
   field: string;
   message: string;
-  value?: any;
+  value?: unknown;
 }
 
 export interface ValidationWarning {
   field: string;
   message: string;
-  value?: any;
+  value?: unknown;
 }
 
 // 검증 옵션
@@ -57,7 +57,7 @@ export class Validator {
   /**
    * 단일 값 검증
    */
-  validateValue(value: any, rule: ValidationRule): ValidationError | null {
+  validateValue(value: unknown, rule: ValidationRule): ValidationError | null {
     const { field, required, type, min, max, pattern, custom, message } = rule;
 
     // 필수 값 검증
@@ -163,7 +163,7 @@ export class Validator {
   /**
    * 객체 검증
    */
-  validate<T extends Record<string, any>>(
+  validate<T extends Record<string, unknown>>(
     type: string, 
     data: T, 
     options: ValidationOptions = {}
@@ -489,14 +489,14 @@ export class GameDataValidator extends Validator {
   /**
    * 게임 콘텐츠 검증 (아이템, 몬스터 등)
    */
-  validateGameContent(type: string, data: any): ValidationResult {
+  validateGameContent(type: string, data: unknown): ValidationResult {
     return this.validate(type, data);
   }
 
   /**
    * 서버-클라이언트 데이터 동기화 검증
    */
-  validateSync(serverData: any, clientData: any): ValidationResult {
+  validateSync(serverData: unknown, clientData: unknown): ValidationResult {
     const errors: ValidationError[] = [];
 
     // 중요한 필드들의 일치성 검증
@@ -521,7 +521,7 @@ export class GameDataValidator extends Validator {
   /**
    * 실시간 검증 (전투, 거래 등)
    */
-  validateRealTimeAction(action: any): ValidationResult {
+  validateRealTimeAction(action: unknown): ValidationResult {
     const errors: ValidationError[] = [];
 
     // 액션 타입 검증

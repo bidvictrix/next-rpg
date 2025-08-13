@@ -88,7 +88,7 @@ interface ZoneResource {
   level?: number;
   isActive: boolean;
   lastRespawn: Date;
-  instanceData?: any;
+  instanceData?: Record<string, unknown>;
 }
 
 // 지역 제한
@@ -114,14 +114,14 @@ interface ZoneEvent {
 // 이벤트 트리거
 interface EventTrigger {
   type: 'time' | 'player_count' | 'monster_death' | 'item_use' | 'random';
-  condition: any;
+  condition: Record<string, unknown>;
   chance?: number; // 확률 (%)
 }
 
 // 이벤트 효과
 interface EventEffect {
   type: 'spawn_monster' | 'change_weather' | 'buff_players' | 'spawn_treasure';
-  data: any;
+  data: Record<string, unknown>;
   duration?: number; // 초 단위
 }
 
@@ -219,7 +219,7 @@ interface ActiveZoneEvent {
   startedAt: Date;
   endsAt?: Date;
   participants: string[];
-  data: any;
+  data: Record<string, unknown>;
 }
 
 // 지역 채팅 메시지
@@ -692,7 +692,7 @@ export class WorldZoneSystem {
   async triggerZoneEvent(
     instanceId: string,
     eventId: string,
-    triggerData?: any
+    triggerData?: Record<string, unknown>
   ): Promise<{ success: boolean; error?: string }> {
     
     const instance = this.instances.get(instanceId);
@@ -911,7 +911,7 @@ export class WorldZoneSystem {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
-  private broadcastToZone(instance: ZoneInstance, message: any, excludePlayerId?: string): void {
+  private broadcastToZone(instance: ZoneInstance, message: Record<string, unknown>, excludePlayerId?: string): void {
     instance.players.forEach((player, playerId) => {
       if (playerId !== excludePlayerId) {
         this.sendMessageToPlayer(playerId, message);
@@ -922,7 +922,7 @@ export class WorldZoneSystem {
   private broadcastToNearbyPlayers(
     instance: ZoneInstance, 
     centerPlayerId: string, 
-    message: any, 
+    message: Record<string, unknown>, 
     range: number
   ): void {
     const centerPlayer = instance.players.get(centerPlayerId);
@@ -938,7 +938,7 @@ export class WorldZoneSystem {
     });
   }
 
-  private async sendMessageToPlayer(playerId: string, message: any): Promise<void> {
+  private async sendMessageToPlayer(playerId: string, message: Record<string, unknown>): Promise<void> {
     // 실제로는 웹소켓이나 다른 실시간 통신으로 구현
     logger.debug(`메시지 전송 to ${playerId}:`, message);
   }

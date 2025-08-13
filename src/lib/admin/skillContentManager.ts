@@ -91,8 +91,8 @@ type ChangeType = 'create' | 'update' | 'delete' | 'activate' | 'deactivate' | '
 // 스킬 변경사항
 interface SkillChange {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   changeReason: string;
 }
 
@@ -145,8 +145,8 @@ type TestStatus = 'running' | 'passed' | 'failed' | 'skipped' | 'error';
 // 테스트 결과
 interface TestResult {
   testCase: string;
-  expected: any;
-  actual: any;
+  expected: unknown;
+  actual: unknown;
   passed: boolean;
   errorMessage?: string;
 }
@@ -433,8 +433,8 @@ export class SkillContentManager {
     // 변경사항 추적
     const changes: SkillChange[] = [];
     Object.keys(updates).forEach(key => {
-      const oldValue = (existingSkill as any)[key];
-      const newValue = (updates as any)[key];
+      const oldValue = (existingSkill as unknown as Record<string, unknown>)[key];
+      const newValue = (updates as Record<string, unknown>)[key];
       
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
         changes.push({
@@ -1146,7 +1146,7 @@ export class SkillContentManager {
       case 'update':
         // 변경사항 적용
         changeLog.changes.forEach(change => {
-          (skill as any)[change.field] = change.newValue;
+          (skill as unknown as Record<string, unknown>)[change.field] = change.newValue;
         });
         this.skills.set(skill.id, skill);
         break;
@@ -1192,7 +1192,7 @@ export class SkillContentManager {
 
     // 롤백 적용
     rollbackChanges.forEach(change => {
-      (skill as any)[change.field] = change.newValue;
+      (skill as unknown as Record<string, unknown>)[change.field] = change.newValue;
     });
 
     this.skills.set(skillId, skill);

@@ -36,11 +36,11 @@ export interface LogEntry {
   level: LogLevel;
   category: LogCategory;
   message: string;
-  data?: any;
+  data?: unknown;
   userId?: string;
   sessionId?: string;
   stackTrace?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // 로그 필터 옵션
@@ -79,8 +79,8 @@ export interface GameEventLog {
   playerId: string;
   playerName: string;
   timestamp: string;
-  data: any;
-  result?: any;
+  data: unknown;
+  result?: unknown;
   duration?: number;
 }
 
@@ -113,7 +113,7 @@ export class Logger {
     level: LogLevel,
     category: LogCategory,
     message: string,
-    data?: any,
+    data?: unknown,
     userId?: string,
     sessionId?: string
   ): void {
@@ -148,9 +148,9 @@ export class Logger {
   /**
    * 디버그 로그
    */
-  debug(category: LogCategory, message: string, data?: any, userId?: string): void;
-  debug(message: string, data?: any): void;
-  debug(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+  debug(category: LogCategory, message: string, data?: unknown, userId?: string): void;
+  debug(message: string, data?: unknown): void;
+  debug(arg1: unknown, arg2?: unknown, arg3?: unknown, arg4?: unknown): void {
     if (typeof arg1 === 'string') {
       // 카테고리 생략 호출 지원
       this.log(LogLevel.DEBUG, LogCategory.SYSTEM, arg1, arg2);
@@ -162,9 +162,9 @@ export class Logger {
   /**
    * 정보 로그
    */
-  info(category: LogCategory, message: string, data?: any, userId?: string): void;
-  info(message: string, data?: any): void;
-  info(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+  info(category: LogCategory, message: string, data?: unknown, userId?: string): void;
+  info(message: string, data?: unknown): void;
+  info(arg1: unknown, arg2?: unknown, arg3?: unknown, arg4?: unknown): void {
     if (typeof arg1 === 'string') {
       this.log(LogLevel.INFO, LogCategory.SYSTEM, arg1, arg2);
     } else {
@@ -175,9 +175,9 @@ export class Logger {
   /**
    * 경고 로그
    */
-  warn(category: LogCategory, message: string, data?: any, userId?: string): void;
-  warn(message: string, data?: any): void;
-  warn(arg1: any, arg2?: any, arg3?: any, arg4?: any): void {
+  warn(category: LogCategory, message: string, data?: unknown, userId?: string): void;
+  warn(message: string, data?: unknown): void;
+  warn(arg1: unknown, arg2?: unknown, arg3?: unknown, arg4?: unknown): void {
     if (typeof arg1 === 'string') {
       this.log(LogLevel.WARN, LogCategory.SYSTEM, arg1, arg2);
     } else {
@@ -188,14 +188,14 @@ export class Logger {
   /**
    * 에러 로그
    */
-  error(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void;
-  error(message: string, error?: Error, data?: any): void;
-  error(arg1: any, arg2?: any, arg3?: any, arg4?: any, arg5?: any): void {
+  error(category: LogCategory, message: string, error?: Error, data?: Record<string, unknown>, userId?: string): void;
+  error(message: string, error?: Error, data?: Record<string, unknown>): void;
+  error(arg1: unknown, arg2?: unknown, arg3?: unknown, arg4?: unknown, arg5?: unknown): void {
     if (typeof arg1 === 'string') {
       const message = arg1 as string;
       const error = arg2 as Error | undefined;
-      const data = arg3;
-      const logData = {
+      const data = arg3 as Record<string, unknown> | undefined;
+      const logData: Record<string, unknown> = {
         ...(data || {}),
         error: error ? {
           name: error.name,
@@ -208,9 +208,9 @@ export class Logger {
       const category = arg1 as LogCategory;
       const message = arg2 as string;
       const error = arg3 as Error | undefined;
-      const data = arg4;
+      const data = arg4 as Record<string, unknown> | undefined;
       const userId = arg5 as string | undefined;
-      const logData = {
+      const logData: Record<string, unknown> = {
         ...(data || {}),
         error: error ? {
           name: error.name,
@@ -225,14 +225,14 @@ export class Logger {
   /**
    * 크리티컬 로그
    */
-  critical(category: LogCategory, message: string, error?: Error, data?: any, userId?: string): void;
-  critical(message: string, error?: Error, data?: any): void;
-  critical(arg1: any, arg2?: any, arg3?: any, arg4?: any, arg5?: any): void {
+  critical(category: LogCategory, message: string, error?: Error, data?: Record<string, unknown>, userId?: string): void;
+  critical(message: string, error?: Error, data?: Record<string, unknown>): void;
+  critical(arg1: unknown, arg2?: unknown, arg3?: unknown, arg4?: unknown, arg5?: unknown): void {
     if (typeof arg1 === 'string') {
       const message = arg1 as string;
       const error = arg2 as Error | undefined;
-      const data = arg3;
-      const logData = {
+      const data = arg3 as Record<string, unknown> | undefined;
+      const logData: Record<string, unknown> = {
         ...(data || {}),
         error: error ? {
           name: error.name,
@@ -245,9 +245,9 @@ export class Logger {
       const category = arg1 as LogCategory;
       const message = arg2 as string;
       const error = arg3 as Error | undefined;
-      const data = arg4;
+      const data = arg4 as Record<string, unknown> | undefined;
       const userId = arg5 as string | undefined;
-      const logData = {
+      const logData: Record<string, unknown> = {
         ...(data || {}),
         error: error ? {
           name: error.name,
@@ -262,7 +262,7 @@ export class Logger {
   /**
    * 게임 이벤트 로그
    */
-  logGameEvent(eventType: string, playerId: string, playerName: string, data: any, result?: any): void {
+  logGameEvent(eventType: string, playerId: string, playerName: string, data: unknown, result?: unknown): void {
     const eventLog: GameEventLog = {
       eventType,
       playerId,
@@ -290,7 +290,7 @@ export class Logger {
   /**
    * 성능 측정 로그
    */
-  logPerformance(operation: string, duration: number, details?: any): void {
+  logPerformance(operation: string, duration: number, details?: unknown): void {
     this.info(LogCategory.PERFORMANCE, `성능 측정: ${operation}`, {
       operation,
       duration: `${duration}ms`,
@@ -321,7 +321,7 @@ export class Logger {
   /**
    * 보안 이벤트 로그
    */
-  logSecurityEvent(eventType: string, severity: 'low' | 'medium' | 'high', details: any, userId?: string): void {
+  logSecurityEvent(eventType: string, severity: 'low' | 'medium' | 'high', details: Record<string, unknown>, userId?: string): void {
     const level = severity === 'high' ? LogLevel.ERROR : 
                  severity === 'medium' ? LogLevel.WARN : LogLevel.INFO;
 
@@ -381,17 +381,17 @@ export class Logger {
       
       switch (entry.level) {
         case LogLevel.DEBUG:
-          console.debug(`${prefix} ${entry.message}`, entry.data || '');
+          console.debug(`${prefix} ${entry.message}`, entry.data ?? '');
           break;
         case LogLevel.INFO:
-          console.info(`${prefix} ${entry.message}`, entry.data || '');
+          console.info(`${prefix} ${entry.message}`, entry.data ?? '');
           break;
         case LogLevel.WARN:
-          console.warn(`${prefix} ${entry.message}`, entry.data || '');
+          console.warn(`${prefix} ${entry.message}`, entry.data ?? '');
           break;
         case LogLevel.ERROR:
         case LogLevel.CRITICAL:
-          console.error(`${prefix} ${entry.message}`, entry.data || '');
+          console.error(`${prefix} ${entry.message}`, entry.data ?? '');
           if (entry.stackTrace) {
             console.error(entry.stackTrace);
           }
@@ -510,7 +510,7 @@ export class Logger {
     return stack ? stack.split('\n').slice(3).join('\n') : '';
   }
 
-  private collectMetadata(): Record<string, any> {
+  private collectMetadata(): Record<string, unknown> {
     return {
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'N/A',
       url: typeof window !== 'undefined' ? window.location.href : 'N/A',
@@ -633,7 +633,7 @@ export class GameLogger extends Logger {
     battleId: string,
     result: 'victory' | 'defeat' | 'flee',
     duration: number,
-    rewards?: any
+    rewards?: Record<string, unknown>
   ): void {
     this.info(LogCategory.BATTLE, '전투 종료', {
       action: 'battle_end',
@@ -654,7 +654,7 @@ export class GameLogger extends Logger {
     playerName: string, 
     questId: string, 
     questName: string,
-    rewards: any
+    rewards: Record<string, unknown>
   ): void {
     this.info(LogCategory.QUEST, '퀘스트 완료', {
       action: 'quest_complete',
@@ -699,7 +699,7 @@ export class GameLogger extends Logger {
     playerId: string,
     playerName: string,
     activityType: string,
-    details: any,
+    details: Record<string, unknown>,
     severity: 'low' | 'medium' | 'high' = 'medium'
   ): void {
     this.logSecurityEvent('suspicious_activity', severity, {

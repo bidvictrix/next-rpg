@@ -49,7 +49,7 @@ export interface WorldEvent {
   id: string;
   type: 'monster_spawn' | 'item_spawn' | 'weather_change' | 'boss_spawn';
   areaId?: string;
-  data: any;
+  data: Record<string, unknown>;
   triggerTime: number;
   processed: boolean;
 }

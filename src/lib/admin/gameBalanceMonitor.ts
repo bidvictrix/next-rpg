@@ -60,7 +60,7 @@ interface BalanceIssue {
   priority: IssuePriority;
   impact: IssueImpact;
   recommendations: Recommendation[];
-  relatedData: any;
+  relatedData: Record<string, unknown>;
   assignedTo?: string;
   resolvedAt?: Date;
   notes: IssueNote[];
@@ -223,7 +223,7 @@ export class GameBalanceMonitor {
   private progressionData: Map<string, ProgressionAnalysis> = new Map();
   private pvpAnalysis: PvPBalanceAnalysis | null = null;
   private balanceAdjustments: Map<string, BalanceAdjustment> = new Map();
-  private analysisHistory: Array<{ timestamp: Date; snapshot: any }> = [];
+  private analysisHistory: Array<{ timestamp: Date; snapshot: Record<string, unknown> }> = [];
   private maxHistorySize: number = 1000;
 
   constructor() {
@@ -1043,12 +1043,12 @@ export class GameBalanceMonitor {
     return [];
   }
 
-  private async getAllItems(): Promise<any[]> {
+  private async getAllItems(): Promise<Array<Record<string, unknown>>> {
     // 실제 구현 필요
     return [];
   }
 
-  private async getAllContent(): Promise<any[]> {
+  private async getAllContent(): Promise<Array<Record<string, unknown>>> {
     // 실제 구현 필요
     return [];
   }
@@ -1058,17 +1058,17 @@ export class GameBalanceMonitor {
     return [];
   }
 
-  private async getMarketData(): Promise<Map<string, any>> {
+  private async getMarketData(): Promise<Map<string, unknown>> {
     // 실제 구현 필요
     return new Map();
   }
 
-  private async getPvPMatches(): Promise<any[]> {
+  private async getPvPMatches(): Promise<Array<Record<string, unknown>>> {
     // 실제 구현 필요
     return [];
   }
 
-  private async getContentCompletionStats(contentId: string): Promise<any> {
+  private async getContentCompletionStats(contentId: string): Promise<Record<string, unknown>> {
     // 실제 구현 필요
     return {};
   }
@@ -1082,21 +1082,21 @@ export class GameBalanceMonitor {
   private generateClassRecommendations(score: number, popularity: number, winRate: number): string[] { return []; }
   private calculateInflationRates(): Map<string, number> { return new Map(); }
   private getItemPriceHistory(itemId: string): Array<{ timestamp: Date; price: number; volume: number }> { return []; }
-  private calculatePriceVolatility(history: any[]): number { return 0; }
+  private calculatePriceVolatility(history: Array<{ timestamp: Date; price: number; volume: number }>): number { return 0; }
   private calculateMarketShare(itemId: string): number { return 0; }
   private getItemUsageFrequency(itemId: string): number { return 0; }
   private getItemDropRate(itemId: string): number { return 0; }
   private assessEconomicImpact(itemId: string): 'positive' | 'neutral' | 'negative' { return 'neutral'; }
-  private calculateDifficultyScore(stats: any): number { return 100; }
-  private needsDifficultyAdjustment(stats: any): boolean { return false; }
-  private identifyBottlenecks(range: any): ProgressionBottleneck[] { return []; }
-  private findDropoffPoints(range: any): number[] { return []; }
-  private calculateEngagement(range: any): number { return 100; }
-  private calculateSatisfaction(range: any): number { return 100; }
+  private calculateDifficultyScore(stats: Record<string, unknown>): number { return 100; }
+  private needsDifficultyAdjustment(stats: Record<string, unknown>): boolean { return false; }
+  private identifyBottlenecks(range: Record<string, unknown>): ProgressionBottleneck[] { return []; }
+  private findDropoffPoints(range: Record<string, unknown>): number[] { return []; }
+  private calculateEngagement(range: Record<string, unknown>): number { return 100; }
+  private calculateSatisfaction(range: Record<string, unknown>): number { return 100; }
   private getPlayerPlayTime(playerId: string): number { return 0; }
   private getProgressionSpeed(playerId: string): number { return 0; }
-  private identifyDominantStrategies(skillStats: any, itemStats: any): string[] { return []; }
-  private identifyUnderusedContent(skillStats: any, itemStats: any): string[] { return []; }
+  private identifyDominantStrategies(skillStats: Record<string, unknown>, itemStats: Record<string, unknown>): string[] { return []; }
+  private identifyUnderusedContent(skillStats: Record<string, unknown>, itemStats: Record<string, unknown>): string[] { return []; }
   private calculateLevelDistributionScore(): number { return 100; }
   private calculateOverallClassBalance(): number { return 100; }
   private calculateEconomyHealthScore(): number { return 100; }
@@ -1228,7 +1228,7 @@ export class GameBalanceMonitor {
     return true;
   }
 
-  exportBalanceReport(startDate: Date, endDate: Date): any {
+  exportBalanceReport(startDate: Date, endDate: Date): Record<string, unknown> {
     const relevantHistory = this.analysisHistory.filter(entry => 
       entry.timestamp >= startDate && entry.timestamp <= endDate
     );
@@ -1246,7 +1246,7 @@ export class GameBalanceMonitor {
     };
   }
 
-  private analyzeTrends(history: any[]): any {
+  private analyzeTrends(history: Array<Record<string, unknown>>): Record<string, unknown> {
     // 트렌드 분석 로직
     return {};
   }

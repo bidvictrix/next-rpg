@@ -425,7 +425,7 @@ export default function InventoryPage() {
               <Button
                 key={tab.key}
                 variant={selectedTab === tab.key ? 'primary' : 'ghost'}
-                onClick={() => setSelectedTab(tab.key as any)}
+              onClick={() => setSelectedTab(tab.key as 'inventory' | 'shop' | 'storage')}
                 className="flex items-center gap-2"
               >
                 <span>{tab.icon}</span>

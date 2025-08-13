@@ -7,7 +7,9 @@ export interface Stats {
   luk: number;    // 운 (크리티컬, 드롭률, 회피)
   // 파생 스탯 (계산으로 구함)
   hp?: number;    // 체력 = vit * 10 + level * 5
+  maxHp?: number;
   mp?: number;    // 마나 = int * 10 + level * 3
+  maxMp?: number;
   atk?: number;   // 공격력 = str * 2 + 장비 공격력
   def?: number;   // 방어력 = vit * 1.5 + 장비 방어력
   acc?: number;   // 명중률 = dex * 0.8 + level

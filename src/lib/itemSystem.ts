@@ -20,8 +20,8 @@ export interface EquipmentResult {
   equipped?: boolean;
   previousItem?: string;
   statChanges?: {
-    before: any;
-    after: any;
+    before: Record<string, number>;
+    after: Record<string, number>;
   };
 }
 
@@ -620,7 +620,16 @@ export class ItemSystem {
     return await playerManager.addItem(player.info.id, itemId, quantity);
   }
 
-  private async getCraftingRecipe(recipeId: string): Promise<any> {
+  private async getCraftingRecipe(recipeId: string): Promise<{
+    id: string;
+    resultItemId: string;
+    materials: Array<{ itemId: string; quantity: number }>;
+    cost: number;
+    successRate: number;
+    skillId?: string;
+    skillLevel?: number;
+    skillExp?: number;
+  }> {
     // 실제로는 제작법 데이터에서 가져와야 함
     return {
       id: recipeId,
@@ -637,7 +646,20 @@ export class ItemSystem {
     };
   }
 
-  private checkCraftingRequirements(recipe: any, player: Player, quantity: number): {
+  private checkCraftingRequirements(
+    recipe: {
+      id: string;
+      resultItemId: string;
+      materials: Array<{ itemId: string; quantity: number }>;
+      cost: number;
+      successRate: number;
+      skillId?: string;
+      skillLevel?: number;
+      skillExp?: number;
+    },
+    player: Player,
+    quantity: number
+  ): {
     success: boolean;
     message: string;
   } {

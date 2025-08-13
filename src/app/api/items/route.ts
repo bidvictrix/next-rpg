@@ -39,10 +39,10 @@ export async function GET(request: NextRequest) {
       });
     } else if (type) {
       // 타입별 필터링
-      items = await getItemsByType(type as any);
+      items = await getItemsByType(type as import('@/types/game').Item['type']);
     } else if (rarity) {
       // 희소성별 필터링
-      items = await getItemsByRarity(rarity as any);
+      items = await getItemsByRarity(rarity as import('@/types/game').Item['rarity']);
     } else if (levelMin && levelMax) {
       // 레벨별 필터링
       items = await getItemsByLevel(parseInt(levelMin), parseInt(levelMax));

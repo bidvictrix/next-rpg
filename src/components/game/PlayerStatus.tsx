@@ -47,9 +47,12 @@ export interface PlayerStats {
   crit: number; // 치명타
   
   // 추가 스탯
-  statPoints: number; // 사용 가능한 스탯 포인트
-  skillPoints: number; // 사용 가능한 스킬 포인트
+  statPoints?: number; // 사용 가능한 스탯 포인트
+  skillPoints?: number; // 사용 가능한 스킬 포인트
 }
+
+// 기본 스탯 키 타입 (포인트 필드 제외)
+type BasicStatKey = 'str' | 'dex' | 'int' | 'vit' | 'luk';
 
 // 플레이어 상태 효과
 export interface StatusEffect {
@@ -71,7 +74,7 @@ export interface PlayerStatusProps {
   stats: PlayerStats;
   statusEffects?: StatusEffect[];
   gold: number;
-  onStatIncrease?: (stat: keyof Omit<PlayerStats, 'hp' | 'maxHp' | 'mp' | 'maxMp' | 'atk' | 'def' | 'acc' | 'eva' | 'crit'>) => void;
+  onStatIncrease?: (stat: BasicStatKey) => void;
   onStatusEffectClick?: (effect: StatusEffect) => void;
   compact?: boolean;
   showDetailedStats?: boolean;
@@ -180,7 +183,7 @@ const StatAllocationModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   stats: PlayerStats;
-  onStatIncrease?: (stat: keyof Omit<PlayerStats, 'hp' | 'maxHp' | 'mp' | 'maxMp' | 'atk' | 'def' | 'acc' | 'eva' | 'crit'>) => void;
+  onStatIncrease?: (stat: BasicStatKey) => void;
 }> = ({ isOpen, onClose, stats, onStatIncrease }) => {
   const [allocation, setAllocation] = useState({
     str: 0,
@@ -191,7 +194,7 @@ const StatAllocationModal: React.FC<{
   });
 
   const totalAllocated = Object.values(allocation).reduce((sum, val) => sum + val, 0);
-  const remainingPoints = stats.statPoints - totalAllocated;
+  const remainingPoints = (stats.statPoints ?? 0) - totalAllocated;
 
   const handleIncrement = (stat: keyof typeof allocation) => {
     if (remainingPoints > 0) {
@@ -208,7 +211,7 @@ const StatAllocationModal: React.FC<{
   const handleApply = () => {
     Object.entries(allocation).forEach(([stat, points]) => {
       for (let i = 0; i < points; i++) {
-        onStatIncrease?.(stat as any);
+        onStatIncrease?.(stat as BasicStatKey);
       }
     });
     setAllocation({ str: 0, dex: 0, int: 0, vit: 0, luk: 0 });
@@ -247,7 +250,7 @@ const StatAllocationModal: React.FC<{
                 <div className="flex items-center gap-2">
                   <span className="font-medium uppercase">{stat}</span>
                   <span className="text-gray-600">
-                    ({(stats as any)[stat]} → {(stats as any)[stat] + points})
+                    ({(stats as unknown as Record<string, number>)[stat]} → {(stats as unknown as Record<string, number>)[stat] + points})
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
@@ -443,9 +446,9 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
           <div className="border-t pt-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">스탯</h3>
-              {stats.statPoints > 0 && (
+              {(stats.statPoints ?? 0) > 0 && (
                 <Button variant="primary" size="sm" onClick={openModal}>
-                  스탯 포인트 할당 ({stats.statPoints})
+                  스탯 포인트 할당 ({stats.statPoints ?? 0})
                 </Button>
               )}
             </div>
@@ -487,10 +490,10 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
             </div>
 
             {/* 스킬 포인트 */}
-            {stats.skillPoints > 0 && (
+            {(stats.skillPoints ?? 0) > 0 && (
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                 <div className="text-sm font-medium text-blue-800">
-                  사용 가능한 스킬 포인트: {stats.skillPoints}
+                  사용 가능한 스킬 포인트: {stats.skillPoints ?? 0}
                 </div>
               </div>
             )}

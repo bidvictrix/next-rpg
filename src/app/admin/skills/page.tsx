@@ -587,7 +587,7 @@ export default function SkillsEditor() {
                 <label className="block text-sm font-medium mb-2">타입</label>
                 <select
                   value={editingSkill.type || 'active'}
-                  onChange={(e) => setEditingSkill(prev => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setEditingSkill(prev => ({ ...prev, type: e.target.value as Skill['type'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="active">액티브</option>
@@ -599,7 +599,7 @@ export default function SkillsEditor() {
                 <label className="block text-sm font-medium mb-2">카테고리</label>
                 <select
                   value={editingSkill.category || 'combat'}
-                  onChange={(e) => setEditingSkill(prev => ({ ...prev, category: e.target.value as any }))}
+                  onChange={(e) => setEditingSkill(prev => ({ ...prev, category: e.target.value as Skill['category'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="combat">전투</option>
@@ -613,7 +613,7 @@ export default function SkillsEditor() {
                 <label className="block text-sm font-medium mb-2">희소성</label>
                 <select
                   value={editingSkill.rarity || 'common'}
-                  onChange={(e) => setEditingSkill(prev => ({ ...prev, rarity: e.target.value as any }))}
+                  onChange={(e) => setEditingSkill(prev => ({ ...prev, rarity: e.target.value as NonNullable<Skill['rarity']> }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="common">일반</option>
@@ -674,14 +674,14 @@ export default function SkillsEditor() {
                 </Button>
               </div>
               <div className="space-y-2">
-                {editingSkill.effects?.map((effect, index) => (
+                {editingSkill.effects?.map((effect: SkillEffect, index: number) => (
                   <div key={effect.id} className="p-3 border rounded-lg">
                     <div className="grid grid-cols-4 gap-2 mb-2">
                       <select
                         value={effect.type}
                         onChange={(e) => {
-                          const newEffects = [...(editingSkill.effects || [])];
-                          newEffects[index] = { ...effect, type: e.target.value as any };
+                          const newEffects: SkillEffect[] = [...(editingSkill.effects || [])];
+                          newEffects[index] = { ...effect, type: e.target.value as SkillEffect['type'] };
                           setEditingSkill(prev => ({ ...prev, effects: newEffects }));
                         }}
                         className="p-1 border rounded text-xs"
@@ -695,8 +695,8 @@ export default function SkillsEditor() {
                       <select
                         value={effect.target}
                         onChange={(e) => {
-                          const newEffects = [...(editingSkill.effects || [])];
-                          newEffects[index] = { ...effect, target: e.target.value as any };
+                          const newEffects: SkillEffect[] = [...(editingSkill.effects || [])];
+                          newEffects[index] = { ...effect, target: e.target.value as SkillEffect['target'] };
                           setEditingSkill(prev => ({ ...prev, effects: newEffects }));
                         }}
                         className="p-1 border rounded text-xs"
@@ -710,7 +710,7 @@ export default function SkillsEditor() {
                         type="number"
                         value={effect.value}
                         onChange={(e) => {
-                          const newEffects = [...(editingSkill.effects || [])];
+                          const newEffects: SkillEffect[] = [...(editingSkill.effects || [])];
                           newEffects[index] = { ...effect, value: parseInt(e.target.value) };
                           setEditingSkill(prev => ({ ...prev, effects: newEffects }));
                         }}
@@ -720,7 +720,7 @@ export default function SkillsEditor() {
                         variant="danger"
                         size="sm"
                         onClick={() => {
-                          const newEffects = editingSkill.effects?.filter((_, i) => i !== index);
+                          const newEffects: SkillEffect[] = (editingSkill.effects || []).filter((_, i) => i !== index);
                           setEditingSkill(prev => ({ ...prev, effects: newEffects }));
                         }}
                       >
@@ -731,7 +731,7 @@ export default function SkillsEditor() {
                       placeholder="효과 설명"
                       value={effect.description}
                       onChange={(e) => {
-                        const newEffects = [...(editingSkill.effects || [])];
+                          const newEffects: SkillEffect[] = [...(editingSkill.effects || [])];
                         newEffects[index] = { ...effect, description: e.target.value };
                         setEditingSkill(prev => ({ ...prev, effects: newEffects }));
                       }}
@@ -758,7 +758,7 @@ export default function SkillsEditor() {
                         value={req.type}
                         onChange={(e) => {
                           const newReqs = [...(editingSkill.requirements || [])];
-                          newReqs[index] = { ...req, type: e.target.value as any };
+                          newReqs[index] = { ...req, type: e.target.value as SkillRequirement['type'] };
                           setEditingSkill(prev => ({ ...prev, requirements: newReqs }));
                         }}
                         className="p-1 border rounded text-xs"

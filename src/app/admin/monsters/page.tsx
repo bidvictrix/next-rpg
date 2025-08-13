@@ -17,6 +17,13 @@ interface MonsterCategory {
   monsters: string[];
 }
 
+// 몬스터 통계 타입 (API 응답 형식에 맞춤)
+interface MonsterStats {
+  total: number;
+  averageLevel: number;
+  byType?: Partial<Record<Monster['type'], number>>;
+}
+
 export default function MonstersEditor() {
   const [monsters, setMonsters] = useState<Monster[]>([]);
   const [categories, setCategories] = useState<MonsterCategory[]>([]);
@@ -29,7 +36,7 @@ export default function MonstersEditor() {
   const [levelRange, setLevelRange] = useState({ min: 1, max: 100 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [monsterStats, setMonsterStats] = useState<any>(null);
+  const [monsterStats, setMonsterStats] = useState<MonsterStats | null>(null);
   
   const { isOpen: editModalOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: deleteModalOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
@@ -109,7 +116,10 @@ export default function MonstersEditor() {
         dex: 10,
         int: 10,
         vit: 10,
-        luk: 10
+        luk: 10,
+        hp: 100,
+        mp: 50,
+        def: 10
       },
       skills: [],
       ai: {
@@ -487,7 +497,7 @@ export default function MonstersEditor() {
                 <label className="block text-sm font-medium mb-2">타입</label>
                 <select
                   value={editingMonster.type || 'normal'}
-                  onChange={(e) => setEditingMonster(prev => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setEditingMonster(prev => ({ ...prev, type: e.target.value as Monster['type'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="normal">일반</option>
@@ -500,7 +510,7 @@ export default function MonstersEditor() {
                 <label className="block text-sm font-medium mb-2">크기</label>
                 <select
                   value={editingMonster.size || 'medium'}
-                  onChange={(e) => setEditingMonster(prev => ({ ...prev, size: e.target.value as any }))}
+                  onChange={(e) => setEditingMonster(prev => ({ ...prev, size: e.target.value as Monster['size'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="tiny">작음</option>
@@ -703,7 +713,7 @@ export default function MonstersEditor() {
                           variant="danger"
                           size="sm"
                           onClick={() => {
-                            const newItems = editingMonster.dropTable?.items?.filter((_, i) => i !== index);
+                            const newItems = (editingMonster.dropTable?.items || []).filter((_, i) => i !== index);
                             setEditingMonster(prev => ({
                               ...prev,
                               dropTable: { ...prev.dropTable!, items: newItems }

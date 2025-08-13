@@ -41,7 +41,8 @@ export async function GET(request: NextRequest) {
       events = await getExpiredEvents();
     } else if (type) {
       // 타입별 필터링
-      events = await getEventsByType(type as any);
+      // GameEvent['type']로 단언하여 정확한 타입 전달
+      events = await getEventsByType(type as import('@/types/game').GameEvent['type']);
     } else {
       // 모든 이벤트 조회
       events = await getAllEvents();

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       monsters = await getMonstersByLevel(parseInt(levelMin), parseInt(levelMax));
     } else if (type) {
       // 타입별 필터링
-      monsters = await getMonstersByType(type as any);
+      monsters = await getMonstersByType(type as import('@/types/game').Monster['type']);
     } else if (area) {
       // 지역별 필터링
       monsters = await getMonstersByArea(area);

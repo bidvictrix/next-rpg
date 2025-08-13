@@ -18,7 +18,7 @@ interface PlayerActivity {
   type: ActivityType;
   priority: ActivityPriority;
   timestamp: Date;
-  data: any; // 활동별 상세 데이터
+  data: Record<string, unknown>; // 활동별 상세 데이터
   sessionId: string;
   ipAddress?: string;
   userAgent?: string;
@@ -29,8 +29,8 @@ interface PlayerActivity {
 // 활동 메타데이터
 interface ActivityMetadata {
   duration?: number; // 활동 지속 시간 (초)
-  beforeState?: any; // 활동 전 상태
-  afterState?: any; // 활동 후 상태
+  beforeState?: Record<string, unknown>; // 활동 전 상태
+  afterState?: Record<string, unknown>; // 활동 후 상태
   relatedPlayers?: string[]; // 관련된 다른 플레이어들
   gameMode?: string; // 게임 모드
   serverLoad?: number; // 서버 부하 (%)
@@ -115,7 +115,7 @@ interface PatternAnomaly {
   description: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   timestamp: Date;
-  evidence: any[];
+  evidence: Array<Record<string, unknown>>;
   falsePositiveChance: number; // 오탐 확률 (%)
 }
 
@@ -156,7 +156,7 @@ interface AlertCondition {
   threshold: number;
   timeWindow: number; // 초 단위
   comparison: 'greater_than' | 'less_than' | 'equals' | 'percentage_change';
-  additionalFilters?: Record<string, any>;
+  additionalFilters?: Record<string, unknown>;
 }
 
 // 알림 액션
@@ -188,7 +188,7 @@ export class PlayerActivityMonitor {
   logActivity(
     playerId: string,
     type: ActivityType,
-    data: any = {},
+    data: Record<string, unknown> = {},
     metadata: Partial<ActivityMetadata> = {}
   ): void {
     const player = this.getPlayerInfo(playerId);
@@ -483,7 +483,7 @@ export class PlayerActivityMonitor {
     };
   }
 
-  private calculateActivityPriority(type: ActivityType, data: any): ActivityPriority {
+  private calculateActivityPriority(type: ActivityType, data: Record<string, unknown>): ActivityPriority {
     const highPriorityTypes: ActivityType[] = ['login', 'logout', 'level_up', 'pvp_battle', 'death'];
     const mediumPriorityTypes: ActivityType[] = ['skill_learn', 'quest_complete', 'trade', 'guild_action'];
     

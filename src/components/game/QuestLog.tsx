@@ -696,7 +696,7 @@ export const QuestLog: React.FC<QuestLogProps> = ({
               key={tab.key}
               variant={selectedTab === tab.key ? 'primary' : 'ghost'}
               size="sm"
-              onClick={() => setSelectedTab(tab.key as any)}
+              onClick={() => setSelectedTab(tab.key as typeof selectedTab)}
             >
               {tab.label} ({tab.count})
             </Button>
@@ -729,7 +729,7 @@ export const QuestLog: React.FC<QuestLogProps> = ({
           
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
             className="px-3 py-2 border rounded-md"
           >
             <option value="priority">우선순위</option>

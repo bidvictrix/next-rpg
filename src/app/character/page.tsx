@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PlayerStatus } from '@/components/game/PlayerStatus';
+import { PlayerStatus, StatusEffect } from '@/components/game/PlayerStatus';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -31,7 +31,7 @@ interface CharacterStats {
 }
 
 // 상태 효과 더미 데이터
-const dummyStatusEffects = [
+const dummyStatusEffects: StatusEffect[] = [
   {
     id: 'blessing',
     name: '축복',
@@ -201,7 +201,7 @@ export default function CharacterPage() {
               <Button
                 key={tab.key}
                 variant={selectedTab === tab.key ? 'primary' : 'ghost'}
-                onClick={() => setSelectedTab(tab.key as any)}
+                onClick={() => setSelectedTab(tab.key as 'stats' | 'appearance' | 'records' | 'equipment')}
                 className="flex items-center gap-2"
               >
                 <span>{tab.icon}</span>
@@ -228,7 +228,25 @@ export default function CharacterPage() {
                 guild: '엘리트 길드',
                 location: '왕도'
               }}
-              stats={player.stats}
+              stats={{
+                // PlayerStatus가 요구하는 형태로 매핑
+                str: player.stats.str,
+                dex: player.stats.dex,
+                int: player.stats.int,
+                vit: player.stats.vit,
+                luk: player.stats.luk,
+                hp: player.stats.hp ?? 0,
+                maxHp: player.stats.maxHp ?? player.stats.hp ?? 0,
+                mp: player.stats.mp ?? 0,
+                maxMp: player.stats.maxMp ?? player.stats.mp ?? 0,
+                atk: player.stats.atk ?? 0,
+                def: player.stats.def ?? 0,
+                acc: player.stats.acc ?? 0,
+                eva: player.stats.eva ?? 0,
+                crit: player.stats.crit ?? 0,
+                statPoints: player.level.statPoints,
+                skillPoints: player.level.skillPoints
+              }}
               statusEffects={dummyStatusEffects}
               gold={player.gold}
               onStatIncrease={handleStatIncrease}
@@ -293,7 +311,7 @@ export default function CharacterPage() {
                           <Button
                             variant="primary"
                             size="sm"
-                            onClick={() => handleStatIncrease(stat.key as any)}
+                            onClick={() => handleStatIncrease(stat.key as 'str' | 'dex' | 'int' | 'vit' | 'luk')}
                             disabled={player.level.statPoints === 0}
                           >
                             +1
@@ -519,7 +537,7 @@ export default function CharacterPage() {
                   }))}
                   className="w-full p-2 border rounded-md"
                 >
-                  {options.map(option => (
+                  {(options as string[]).map((option: string) => (
                     <option key={option} value={option}>{option}</option>
                   ))}
                 </select>

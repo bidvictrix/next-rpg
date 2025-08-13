@@ -375,7 +375,7 @@ export default function EconomyManagement() {
           <div className="flex gap-2">
             <select
               value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value as any)}
+              onChange={(e) => setSelectedTimeRange(e.target.value as '1d' | '7d' | '30d')}
               className="px-3 py-2 border rounded-md"
             >
               <option value="1d">최근 1일</option>

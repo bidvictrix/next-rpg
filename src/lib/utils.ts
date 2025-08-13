@@ -301,7 +301,7 @@ export class ArrayUtils {
   /**
    * 배열을 그룹화
    */
-  static groupBy<T, K extends keyof any>(array: T[], keyFn: (item: T) => K): Record<K, T[]> {
+  static groupBy<T, K extends PropertyKey>(array: T[], keyFn: (item: T) => K): Record<K, T[]> {
     return array.reduce((groups, item) => {
       const key = keyFn(item);
       if (!groups[key]) groups[key] = [];
@@ -342,14 +342,14 @@ export class ObjectUtils {
    */
   static deepClone<T>(obj: T): T {
     if (obj === null || typeof obj !== 'object') return obj;
-    if (obj instanceof Date) return new Date(obj.getTime()) as any;
-    if (obj instanceof Array) return obj.map(item => ObjectUtils.deepClone(item)) as any;
+    if (obj instanceof Date) return new Date(obj.getTime()) as unknown as T;
+    if (obj instanceof Array) return obj.map(item => ObjectUtils.deepClone(item)) as unknown as T;
     if (typeof obj === 'object') {
-      const cloned = {} as { [key: string]: any };
+      const cloned: Record<string, unknown> = {};
       Object.keys(obj).forEach(key => {
-        cloned[key] = ObjectUtils.deepClone((obj as any)[key]);
+        cloned[key] = ObjectUtils.deepClone((obj as Record<string, unknown>)[key]);
       });
-      return cloned as T;
+      return cloned as unknown as T;
     }
     return obj;
   }
@@ -357,9 +357,9 @@ export class ObjectUtils {
   /**
    * 중첩 객체에서 값 가져오기
    */
-  static get(obj: any, path: string, defaultValue?: any): any {
+  static get(obj: unknown, path: string, defaultValue?: unknown): unknown {
     const keys = path.split('.');
-    let current = obj;
+    let current = obj as Record<string, unknown> | unknown[];
     
     for (const key of keys) {
       if (current === null || current === undefined || typeof current !== 'object') {
@@ -374,9 +374,9 @@ export class ObjectUtils {
   /**
    * 중첩 객체에 값 설정
    */
-  static set(obj: any, path: string, value: any): void {
+  static set(obj: Record<string, unknown>, path: string, value: unknown): void {
     const keys = path.split('.');
-    let current = obj;
+    let current = obj as Record<string, unknown>;
     
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
@@ -392,15 +392,15 @@ export class ObjectUtils {
   /**
    * 객체 평탄화
    */
-  static flatten(obj: any, prefix: string = ''): Record<string, any> {
-    const flattened: Record<string, any> = {};
+  static flatten(obj: Record<string, unknown>, prefix: string = ''): Record<string, unknown> {
+    const flattened: Record<string, unknown> = {};
     
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
         
         if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          Object.assign(flattened, ObjectUtils.flatten(obj[key], newKey));
+          Object.assign(flattened, ObjectUtils.flatten(obj[key] as Record<string, unknown>, newKey));
         } else {
           flattened[newKey] = obj[key];
         }
@@ -617,7 +617,7 @@ export class ValidationUtils {
   /**
    * 객체가 비어있지 않은지 검증
    */
-  static isNonEmptyObject(obj: any): boolean {
+  static isNonEmptyObject(obj: unknown): boolean {
     return typeof obj === 'object' && obj !== null && Object.keys(obj).length > 0;
   }
 
@@ -634,7 +634,7 @@ export class DebugUtils {
   /**
    * 객체를 보기 좋게 출력
    */
-  static prettyPrint(obj: any): void {
+  static prettyPrint(obj: unknown): void {
     console.log(JSON.stringify(obj, null, 2));
   }
 
@@ -652,7 +652,7 @@ export class DebugUtils {
   /**
    * 조건부 로그
    */
-  static conditionalLog(condition: boolean, message: string, ...args: any[]): void {
+  static conditionalLog(condition: boolean, message: string, ...args: unknown[]): void {
     if (condition) {
       console.log(message, ...args);
     }
@@ -692,7 +692,7 @@ export class PerformanceUtils {
   /**
    * 메모리 사용량 정보 (Node.js 환경에서만)
    */
-  static getMemoryUsage(): any {
+  static getMemoryUsage(): NodeJS.MemoryUsage | null {
     if (typeof process !== 'undefined' && process.memoryUsage) {
       return process.memoryUsage();
     }
@@ -702,7 +702,7 @@ export class PerformanceUtils {
   /**
    * 함수 debounce
    */
-  static debounce<T extends (...args: any[]) => any>(
+  static debounce<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number
   ): (...args: Parameters<T>) => void {
@@ -716,7 +716,7 @@ export class PerformanceUtils {
   /**
    * 함수 throttle
    */
-  static throttle<T extends (...args: any[]) => any>(
+  static throttle<T extends (...args: unknown[]) => unknown>(
     func: T,
     delay: number
   ): (...args: Parameters<T>) => void {

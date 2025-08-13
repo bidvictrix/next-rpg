@@ -12,9 +12,26 @@ type WorldEventType =
 type EventStatus = 'scheduled' | 'active' | 'paused' | 'completed' | 'cancelled' | 'failed';
 
 // 이벤트 참여 조건
+interface LevelRequirement { min?: number; max?: number }
+interface ClassRequirement { classes: string[] }
+interface GuildRequirement { guildId: string }
+interface AchievementRequirement { ids: string[] }
+interface ItemRequirement { id: string; amount?: number }
+interface QuestCompletionRequirement { questId: string }
+interface LocationRequirement { zoneId: string }
+
+type EventRequirement =
+  | LevelRequirement
+  | ClassRequirement
+  | GuildRequirement
+  | AchievementRequirement
+  | ItemRequirement
+  | QuestCompletionRequirement
+  | LocationRequirement;
+
 interface EventParticipationCondition {
   type: 'level' | 'class' | 'guild' | 'achievement' | 'item' | 'quest_completion' | 'location';
-  requirement: any;
+  requirement: EventRequirement;
   message: string;
 }
 
@@ -70,7 +87,7 @@ interface EventObjective {
   title: string;
   description: string;
   type: 'kill_monsters' | 'collect_items' | 'reach_location' | 'survive_time' | 'score_points' | 'team_objective';
-  target: any; // 목표 데이터
+  target: Record<string, unknown>; // 목표 데이터
   current: number;
   required: number;
   isCompleted: boolean;
@@ -811,7 +828,7 @@ export class WorldEventSystem {
     for (const condition of event.participationConditions) {
       switch (condition.type) {
         case 'level':
-          const levelReq = condition.requirement;
+          const levelReq = condition.requirement as LevelRequirement;
           if (levelReq.min && player.level < levelReq.min) {
             return { allowed: false, reason: condition.message };
           }
@@ -820,7 +837,7 @@ export class WorldEventSystem {
           }
           break;
         case 'class':
-          const allowedClasses = condition.requirement.classes || [];
+          const allowedClasses = (condition.requirement as ClassRequirement).classes || [];
           if (allowedClasses.length > 0 && !allowedClasses.includes(player.class)) {
             return { allowed: false, reason: condition.message };
           }

@@ -20,7 +20,7 @@ interface TradeItem {
   rarity: string;
   value: number;
   enchantment?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 // 거래 제안
@@ -67,7 +67,7 @@ interface TradeLog {
   playerId: string;
   playerName: string;
   details: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 // 거래 제한 설정
@@ -787,7 +787,7 @@ export class TradingSystem {
     return null;
   }
 
-  private async getPlayerItem(playerId: string, itemId: string): Promise<any> {
+  private async getPlayerItem(playerId: string, itemId: string): Promise<{ itemId: string; quantity: number } | null> {
     // 실제 구현 필요
     return null;
   }

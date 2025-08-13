@@ -309,8 +309,8 @@ export default function PlayersManagement() {
               value={`${sortBy}_${sortOrder}`}
               onChange={(e) => {
                 const [field, order] = e.target.value.split('_');
-                setSortBy(field as any);
-                setSortOrder(order as any);
+                setSortBy(field as typeof sortBy);
+                setSortOrder(order as typeof sortOrder);
               }}
               className="px-3 py-2 border rounded-md"
             >

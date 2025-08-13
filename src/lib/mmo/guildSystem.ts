@@ -141,7 +141,7 @@ interface GuildActivity {
   description: string;
   scheduledAt?: Date;
   participants: string[];
-  rewards?: any;
+  rewards?: Array<{ id: string; amount?: number; type?: string }>;
   status: 'scheduled' | 'active' | 'completed' | 'cancelled';
   createdBy: string;
   createdAt: Date;
@@ -165,7 +165,7 @@ interface GuildWar {
     ourGuild: string[];
     enemyGuild: string[];
   };
-  rewards?: any;
+  rewards?: Array<{ id: string; amount?: number; type?: string }>;
 }
 
 // 길드 동맹

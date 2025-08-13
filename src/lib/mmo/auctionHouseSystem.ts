@@ -14,7 +14,7 @@ interface AuctionItem {
   description: string;
   enchantLevel?: number;
   rarity: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   imageUrl?: string;
 }
 
@@ -116,7 +116,7 @@ interface AuctionHouseSettings {
   maxListingsPerPlayer: number;
   maxListingDuration: number; // 최대 경매 기간 (시간)
   minListingDuration: number; // 최소 경매 기간 (시간)
-  baseLis tingFee: number;
+  baseListingFee: number;
   baseCommissionRate: number; // 기본 수수료율 (%)
   maxBuyoutPriceMultiplier: number; // 즉시구매가 최대 배수
   bidIncrement: number; // 최소 입찰 증가액
@@ -141,7 +141,7 @@ export class AuctionHouseSystem {
       maxListingsPerPlayer: 20,
       maxListingDuration: 168, // 7일
       minListingDuration: 1, // 1시간
-      baseLis tingFee: 100,
+      baseListingFee: 100,
       baseCommissionRate: 5,
       maxBuyoutPriceMultiplier: 10,
       bidIncrement: 100,
@@ -544,7 +544,8 @@ export class AuctionHouseSystem {
     const sortOrder = filters.sortOrder || 'desc';
     
     filteredListings.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: number;
+      let bValue: number;
       
       switch (sortBy) {
         case 'price':
@@ -696,13 +697,13 @@ export class AuctionHouseSystem {
   }
 
   private calculateListingFee(startingPrice: number, duration: number): number {
-    const baseFee = this.settings.baseLis tingFee;
+    const baseFee = this.settings.baseListingFee;
     const priceFee = Math.floor(startingPrice * 0.01); // 1%
     const durationFee = Math.floor(duration * 10); // 시간당 10골드
     return baseFee + priceFee + durationFee;
   }
 
-  private determineCategory(item: any): AuctionCategory {
+  private determineCategory(item: { type?: string }): AuctionCategory {
     // 아이템 타입에 따른 카테고리 자동 분류
     if (item.type?.includes('weapon')) return 'weapon';
     if (item.type?.includes('armor')) return 'armor';
@@ -712,7 +713,7 @@ export class AuctionHouseSystem {
     return 'misc';
   }
 
-  private generateTags(item: any): string[] {
+  private generateTags(item: { enchantLevel?: number; rarity?: string; grade?: string; level?: number }): string[] {
     const tags: string[] = [];
     
     if (item.enchantLevel > 0) tags.push(`+${item.enchantLevel}`);
@@ -794,7 +795,7 @@ export class AuctionHouseSystem {
     this.priceHistory.set(itemId, history);
   }
 
-  private async notifyWatchers(listing: AuctionListing, event: string, data: any): Promise<void> {
+  private async notifyWatchers(listing: AuctionListing, event: string, data: Record<string, unknown>): Promise<void> {
     // 실제로는 알림 시스템과 연동
     logger.info(`경매 알림 [${listing.id}] ${event}:`, data);
   }
@@ -804,7 +805,7 @@ export class AuctionHouseSystem {
     return null;
   }
 
-  private async getPlayerItem(playerId: string, itemId: string): Promise<any> {
+  private async getPlayerItem(playerId: string, itemId: string): Promise<{ itemId: string; quantity: number } | null> {
     return null;
   }
 

@@ -168,7 +168,7 @@ export class DataManager {
         if (searchInContent) {
           try {
             const filePath = path.join(dirPath, file);
-            const content = await this.readFile<any>(filePath);
+            const content = await this.readFile<unknown>(filePath);
             const contentString = JSON.stringify(content).toLowerCase();
             
             if (contentString.includes(searchTerm.toLowerCase())) {
@@ -195,7 +195,7 @@ export class DataManager {
       filePath: string;
       data?: T;
     }>
-  ): Promise<Array<{ success: boolean; result?: any; error?: string }>> {
+  ): Promise<Array<{ success: boolean; result?: unknown; error?: string }>> {
     const results = await Promise.allSettled(
       operations.map(async (op) => {
         switch (op.type) {
@@ -210,7 +210,7 @@ export class DataManager {
           case 'delete':
             return await this.deleteFile(op.filePath);
           default:
-            throw new Error(`지원되지 않는 작업 타입: ${(op as any).type}`);
+            throw new Error(`지원되지 않는 작업 타입: ${op.type}`);
         }
       })
     );
@@ -280,7 +280,7 @@ export const dataManager = new DataManager();
 export const readPlayerData = (playerId: string) => 
   dataManager.readFile(`players/${playerId}.json`);
 
-export const writePlayerData = (playerId: string, data: any) => 
+export const writePlayerData = <T>(playerId: string, data: T) => 
   dataManager.writeFile(`players/${playerId}.json`, data);
 
 export const readGameData = <T>(fileName: string) => 

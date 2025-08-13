@@ -3,7 +3,7 @@
  * JSON 데이터의 빠른 접근을 위한 메모리 캐싱
  */
 
-interface CacheEntry<T = any> {
+interface CacheEntry<T = unknown> {
   data: T;
   timestamp: number;
   ttl: number; // Time To Live (ms)
@@ -60,7 +60,7 @@ export class DataCache {
   /**
    * 캐시에서 데이터 조회
    */
-  get<T = any>(key: string): T | null {
+  get<T = unknown>(key: string): T | null {
     const entry = this.cache.get(key);
     
     if (!entry) {
@@ -87,7 +87,7 @@ export class DataCache {
   /**
    * 캐시에 데이터 저장
    */
-  set<T = any>(key: string, data: T, ttl?: number): boolean {
+  set<T = unknown>(key: string, data: T, ttl?: number): boolean {
     const now = Date.now();
     const entryTTL = ttl || this.defaultTTL;
     const dataSize = this.calculateSize(data);
@@ -209,7 +209,7 @@ export class DataCache {
   /**
    * 데이터 크기 계산
    */
-  private calculateSize(data: any): number {
+  private calculateSize(data: unknown): number {
     try {
       return new Blob([JSON.stringify(data)]).size;
     } catch (error) {
@@ -329,56 +329,56 @@ export class GameDataCache {
   /**
    * 스킬 데이터 캐싱
    */
-  getSkills(key: string = 'all'): any {
-    return this.skillsCache.get(key);
+  getSkills<T = unknown>(key: string = 'all'): T | null {
+    return this.skillsCache.get<T>(key);
   }
   
-  setSkills(data: any, key: string = 'all'): void {
-    this.skillsCache.set(key, data);
+  setSkills<T = unknown>(data: T, key: string = 'all'): void {
+    this.skillsCache.set<T>(key, data);
   }
   
   /**
    * 몬스터 데이터 캐싱
    */
-  getMonsters(key: string = 'all'): any {
-    return this.monstersCache.get(key);
+  getMonsters<T = unknown>(key: string = 'all'): T | null {
+    return this.monstersCache.get<T>(key);
   }
   
-  setMonsters(data: any, key: string = 'all'): void {
-    this.monstersCache.set(key, data);
+  setMonsters<T = unknown>(data: T, key: string = 'all'): void {
+    this.monstersCache.set<T>(key, data);
   }
   
   /**
    * 아이템 데이터 캐싱
    */
-  getItems(key: string = 'all'): any {
-    return this.itemsCache.get(key);
+  getItems<T = unknown>(key: string = 'all'): T | null {
+    return this.itemsCache.get<T>(key);
   }
   
-  setItems(data: any, key: string = 'all'): void {
-    this.itemsCache.set(key, data);
+  setItems<T = unknown>(data: T, key: string = 'all'): void {
+    this.itemsCache.set<T>(key, data);
   }
   
   /**
    * 이벤트 데이터 캐싱
    */
-  getEvents(key: string = 'all'): any {
-    return this.eventsCache.get(key);
+  getEvents<T = unknown>(key: string = 'all'): T | null {
+    return this.eventsCache.get<T>(key);
   }
   
-  setEvents(data: any, key: string = 'all'): void {
-    this.eventsCache.set(key, data);
+  setEvents<T = unknown>(data: T, key: string = 'all'): void {
+    this.eventsCache.set<T>(key, data);
   }
   
   /**
    * 플레이어 데이터 캐싱
    */
-  getPlayer(playerId: string): any {
-    return this.playersCache.get(playerId);
+  getPlayer<T = unknown>(playerId: string): T | null {
+    return this.playersCache.get<T>(playerId);
   }
   
-  setPlayer(playerId: string, data: any): void {
-    this.playersCache.set(playerId, data);
+  setPlayer<T = unknown>(playerId: string, data: T): void {
+    this.playersCache.set<T>(playerId, data);
   }
   
   /**

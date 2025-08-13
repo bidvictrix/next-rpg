@@ -197,7 +197,7 @@ interface AlertCondition {
 interface AlertAction {
   type: 'notification' | 'auto_scale' | 'restart_service' | 'failover' | 'webhook';
   target: string;
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
 }
 
 export class SystemResourceMonitor {
@@ -227,7 +227,7 @@ export class SystemResourceMonitor {
       'load_balancer', 'message_queue', 'auth_service', 'payment_service'
     ];
 
-    const componentHealth: Record<SystemComponent, ComponentHealth> = {} as any;
+    const componentHealth = {} as Record<SystemComponent, ComponentHealth>;
 
     components.forEach(component => {
       componentHealth[component] = {
@@ -1028,7 +1028,7 @@ export class SystemResourceMonitor {
     logger.warn(`서비스 재시작: ${target}`);
   }
 
-  private callWebhook(url: string, data: any): void {
+  private callWebhook(url: string, data: Record<string, unknown>): void {
     logger.info(`웹훅 호출: ${url}`, data);
   }
 
@@ -1299,7 +1299,7 @@ export class SystemResourceMonitor {
   }
 
   private generatePerformanceRecommendations(
-    summary: any, 
+    summary: { averageResponseTime: number; errorRate: number; cpuUsage: number; memoryUsage: number }, 
     incidents: Incident[]
   ): PerformanceRecommendation[] {
     const recommendations: PerformanceRecommendation[] = [];

@@ -84,7 +84,7 @@ const typeIcons = {
 const ItemSlot: React.FC<{
   item?: InventoryItem;
   slotIndex: number;
-  onItemClick: (item?: InventoryItem, slotIndex: number) => void;
+  onItemClick: (slotIndex: number, item?: InventoryItem) => void;
   onItemDoubleClick?: (item: InventoryItem) => void;
   isDragOver?: boolean;
   onDragStart?: (e: React.DragEvent, item: InventoryItem, slotIndex: number) => void;
@@ -115,7 +115,7 @@ const ItemSlot: React.FC<{
         item?.equipped && 'shadow-lg shadow-blue-500/25',
         'relative group'
       )}
-      onClick={() => onItemClick(item, slotIndex)}
+      onClick={() => onItemClick(slotIndex, item)}
       onDoubleClick={() => item && onItemDoubleClick?.(item)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop?.(e, slotIndex)}
@@ -380,18 +380,21 @@ export const Inventory: React.FC<InventoryProps> = ({
   // 정렬된 아이템
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
-      let aValue = a[sortBy];
-      let bValue = b[sortBy];
+      let aValue: string | number | undefined = a[sortBy] as unknown as string | number | undefined;
+      let bValue: string | number | undefined = b[sortBy] as unknown as string | number | undefined;
 
       if (sortBy === 'rarity') {
-        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
+        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 } as const;
         aValue = rarityOrder[a.rarity];
         bValue = rarityOrder[b.rarity];
       }
 
-      if (typeof aValue === 'string') {
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
         aValue = aValue.toLowerCase();
-        bValue = (bValue as string).toLowerCase();
+        bValue = bValue.toLowerCase();
       }
 
       if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -401,13 +404,11 @@ export const Inventory: React.FC<InventoryProps> = ({
   }, [filteredItems, sortBy, sortDirection]);
 
   // 선택된 아이템
-  const selectedItem = selectedSlot !== null ? slotItems[selectedSlot] : null;
+  const selectedItem: InventoryItem | null = selectedSlot !== null ? (slotItems[selectedSlot] ?? null) : null;
 
   // 아이템 클릭 핸들러
-  const handleItemClick = useCallback((item?: InventoryItem, slotIndex?: number) => {
-    if (slotIndex !== undefined) {
-      setSelectedSlot(selectedSlot === slotIndex ? null : slotIndex);
-    }
+  const handleItemClick = useCallback((slotIndex: number, item?: InventoryItem) => {
+    setSelectedSlot(selectedSlot === slotIndex ? null : slotIndex);
   }, [selectedSlot]);
 
   // 아이템 더블클릭 핸들러 (상세 정보)

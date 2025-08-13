@@ -78,7 +78,7 @@ interface AbilityEffect {
 // 능력 조건
 interface AbilityCondition {
   type: 'health_percent' | 'mana_percent' | 'phase' | 'time_elapsed' | 'player_count' | 'random';
-  value: any;
+  value: number | string | { min?: number; max?: number };
   operator?: 'less_than' | 'greater_than' | 'equals' | 'not_equals';
 }
 
@@ -99,7 +99,7 @@ interface BossPhase {
 // 페이즈 효과
 interface PhaseEffect {
   type: 'spawn_adds' | 'environment_change' | 'player_teleport' | 'buff_boss' | 'debuff_players';
-  data: any;
+  data: Record<string, unknown>;
   triggerCondition?: string;
 }
 
@@ -145,7 +145,7 @@ interface DropPool {
 // 레이드 요구사항
 interface RaidRequirement {
   type: 'level' | 'class' | 'party_size' | 'guild' | 'item' | 'quest' | 'achievement';
-  condition: any;
+  condition: Record<string, unknown> | number | string;
   message: string;
 }
 
@@ -281,7 +281,7 @@ interface RaidEvent {
   damage?: number;
   healing?: number;
   description: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 // 레이드 이벤트 타입
@@ -1633,8 +1633,9 @@ export class BossRaidSystem {
 
     // 스탯 수정자 적용
     Object.entries(phase.statModifiers).forEach(([stat, modifier]) => {
-      const currentValue = (raid.boss.stats as any)[stat] || 0;
-      (raid.boss.stats as any)[stat] = Math.floor(currentValue * (modifier / 100));
+      const statsRecord = raid.boss.stats as unknown as Record<string, number>;
+      const currentValue = statsRecord[stat] || 0;
+      statsRecord[stat] = Math.floor(currentValue * (modifier / 100));
     });
 
     // 페이즈 전환 복구 처리
@@ -1722,13 +1723,13 @@ export class BossRaidSystem {
     }
   }
 
-  private broadcastToRaid(raid: RaidInstance, message: any): void {
+  private broadcastToRaid(raid: RaidInstance, message: Record<string, unknown>): void {
     raid.participants.forEach((participant, playerId) => {
       this.sendMessageToPlayer(playerId, message);
     });
   }
 
-  private async sendMessageToPlayer(playerId: string, message: any): Promise<void> {
+  private async sendMessageToPlayer(playerId: string, message: Record<string, unknown>): Promise<void> {
     // 실제로는 웹소켓 등으로 구현
     logger.debug(`메시지 전송 to ${playerId}:`, message);
   }

@@ -139,10 +139,10 @@ export default function AdminDashboard() {
 
       // 새 활동 로그 추가 (10% 확률)
       if (Math.random() < 0.1) {
-        const newLog: ActivityLog = {
+          const newLog: ActivityLog = {
           id: Date.now().toString(),
           timestamp: new Date(),
-          type: ['login', 'levelup', 'quest', 'battle'][Math.floor(Math.random() * 4)] as any,
+            type: ['login', 'levelup', 'quest', 'battle'][Math.floor(Math.random() * 4)] as ActivityLog['type'],
           playerName: `플레이어${Math.floor(Math.random() * 1000)}`,
           message: '새로운 활동이 발생했습니다.',
           severity: 'info'
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             <select
               value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value as any)}
+              onChange={(e) => setSelectedTimeRange(e.target.value as '1h' | '24h' | '7d' | '30d')}
               className="px-3 py-2 border rounded-md"
             >
               <option value="1h">최근 1시간</option>

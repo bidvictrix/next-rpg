@@ -9,7 +9,9 @@ export interface Stats {
   vit: number;
   luk: number;
   hp: number;
+  maxHp?: number;
   mp: number;
+  maxMp?: number;
   def: number;
   atk?: number;
   acc?: number;

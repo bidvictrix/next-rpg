@@ -666,7 +666,7 @@ export default function ItemsEditor() {
                 <label className="block text-sm font-medium mb-2">타입</label>
                 <select
                   value={editingItem.type || 'misc'}
-                  onChange={(e) => setEditingItem(prev => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setEditingItem(prev => ({ ...prev, type: e.target.value as Item['type'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="weapon">무기</option>
@@ -689,7 +689,7 @@ export default function ItemsEditor() {
                 <label className="block text-sm font-medium mb-2">희소성</label>
                 <select
                   value={editingItem.rarity || 'common'}
-                  onChange={(e) => setEditingItem(prev => ({ ...prev, rarity: e.target.value as any }))}
+                  onChange={(e) => setEditingItem(prev => ({ ...prev, rarity: e.target.value as Item['rarity'] }))}
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="common">일반</option>
@@ -705,7 +705,7 @@ export default function ItemsEditor() {
                   <label className="block text-sm font-medium mb-2">장비 슬롯</label>
                   <select
                     value={editingItem.slot || ''}
-                    onChange={(e) => setEditingItem(prev => ({ ...prev, slot: e.target.value as any }))}
+                    onChange={(e) => setEditingItem(prev => ({ ...prev, slot: e.target.value as NonNullable<Item['slot']> }))}
                     className="w-full p-2 border rounded-md"
                   >
                     <option value="">선택 안함</option>
@@ -913,14 +913,14 @@ export default function ItemsEditor() {
                     </Button>
                   </div>
                   <div className="space-y-2">
-                    {editingItem.consumable?.effects?.map((effect, index) => (
+                    {editingItem.consumable?.effects?.map((effect: ItemEffect, index: number) => (
                       <div key={effect.id} className="p-3 border rounded-lg">
                         <div className="grid grid-cols-4 gap-2 mb-2">
                           <select
                             value={effect.type}
                             onChange={(e) => {
-                              const newEffects = [...(editingItem.consumable?.effects || [])];
-                              newEffects[index] = { ...effect, type: e.target.value as any };
+                              const newEffects: ItemEffect[] = [...(editingItem.consumable?.effects || [])];
+                              newEffects[index] = { ...effect, type: e.target.value as ItemEffect['type'] };
                               setEditingItem(prev => ({
                                 ...prev,
                                 consumable: { ...prev.consumable!, effects: newEffects }
@@ -937,8 +937,8 @@ export default function ItemsEditor() {
                           <select
                             value={effect.target}
                             onChange={(e) => {
-                              const newEffects = [...(editingItem.consumable?.effects || [])];
-                              newEffects[index] = { ...effect, target: e.target.value as any };
+                              const newEffects: ItemEffect[] = [...(editingItem.consumable?.effects || [])];
+                              newEffects[index] = { ...effect, target: e.target.value as ItemEffect['target'] };
                               setEditingItem(prev => ({
                                 ...prev,
                                 consumable: { ...prev.consumable!, effects: newEffects }
@@ -954,7 +954,7 @@ export default function ItemsEditor() {
                             type="number"
                             value={effect.value}
                             onChange={(e) => {
-                              const newEffects = [...(editingItem.consumable?.effects || [])];
+                              const newEffects: ItemEffect[] = [...(editingItem.consumable?.effects || [])];
                               newEffects[index] = { ...effect, value: parseInt(e.target.value) || 0 };
                               setEditingItem(prev => ({
                                 ...prev,
@@ -967,10 +967,10 @@ export default function ItemsEditor() {
                             variant="danger"
                             size="sm"
                             onClick={() => {
-                              const newEffects = editingItem.consumable?.effects?.filter((_, i) => i !== index);
+                              const newEffects: ItemEffect[] = (editingItem.consumable?.effects || []).filter((_, i) => i !== index);
                               setEditingItem(prev => ({
                                 ...prev,
-                                consumable: { ...prev.consumable!, effects: newEffects }
+                                consumable: { ...prev.consumable!, effects: newEffects as ItemEffect[] }
                               }));
                             }}
                           >
@@ -981,7 +981,7 @@ export default function ItemsEditor() {
                           placeholder="효과 설명"
                           value={effect.description}
                           onChange={(e) => {
-                            const newEffects = [...(editingItem.consumable?.effects || [])];
+                             const newEffects: ItemEffect[] = [...(editingItem.consumable?.effects || [])];
                             newEffects[index] = { ...effect, description: e.target.value };
                             setEditingItem(prev => ({
                               ...prev,

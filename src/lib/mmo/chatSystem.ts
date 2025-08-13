@@ -606,7 +606,7 @@ export class ChatSystem {
     commandsUsed: number;
   } {
     let totalMessages = 0;
-    const messagesPerChannel: Record<ChatChannel, number> = {} as any;
+    const messagesPerChannel = {} as Record<ChatChannel, number>;
     
     this.messages.forEach((messages, channel) => {
       messagesPerChannel[channel] = messages.length;

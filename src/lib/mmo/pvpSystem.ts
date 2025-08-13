@@ -17,7 +17,7 @@ interface PvPMatch {
   participants: PvPParticipant[];
   teams: PvPTeam[];
   status: PvPStatus;
-  result?: PvPMatchResult;
+  result?: 'victory' | 'defeat' | 'draw';
   winner?: string; // 팀 ID 또는 플레이어 ID
   battleLog: PvPBattleEvent[];
   settings: PvPMatchSettings;
@@ -37,8 +37,8 @@ interface PvPParticipant {
   teamId: string;
   rating: number;
   stats: Stats;
-  equipment: any[]; // 장비 정보
-  skills: any[]; // 사용 가능한 스킬
+  equipment: Array<{ id: string; name?: string }>; // 간단한 장비 정보
+  skills: Array<{ id: string; level?: number }>; // 간단한 스킬 정보
   buffs: PvPBuff[];
   debuffs: PvPDebuff[];
   currentHP: number;
@@ -80,7 +80,7 @@ interface PvPBattleEvent {
   actionType: string;
   value?: number;
   description: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 // PvP 액션
@@ -93,7 +93,7 @@ interface PvPAction {
   position?: { x: number; y: number };
   plannedAt: Date;
   executedAt?: Date;
-  result?: any;
+  result?: Record<string, unknown>;
 }
 
 // PvP 버프/디버프
@@ -146,7 +146,7 @@ interface PvPTier {
   maxRating: number;
   color: string;
   icon: string;
-  rewards: any[];
+  rewards: Array<{ id: string; name?: string }>;
 }
 
 // 시즌 통계
@@ -479,7 +479,7 @@ export class PvPSystem {
     matchId: string,
     playerId: string,
     action: Omit<PvPAction, 'id' | 'plannedAt'>
-  ): Promise<{ success: boolean; result?: any; error?: string }> {
+  ): Promise<{ success: boolean; result?: Record<string, unknown>; error?: string }> {
     
     const match = this.matches.get(matchId);
     if (!match) {
@@ -508,7 +508,7 @@ export class PvPSystem {
     };
 
     // 액션 타입별 처리
-    let result: any = {};
+    let result: Record<string, unknown> = {};
     switch (action.type) {
       case 'attack':
         result = await this.processAttack(match, participant, action.targetId!);
@@ -543,7 +543,7 @@ export class PvPSystem {
     match: PvPMatch,
     attacker: PvPParticipant,
     targetId: string
-  ): Promise<any> {
+  ): Promise<{ damage: number; isCritical: boolean; targetHP: number; targetAlive: boolean } | { error: string }> {
     
     const target = match.participants.find(p => p.playerId === targetId);
     if (!target) {
@@ -613,10 +613,12 @@ export class PvPSystem {
     });
 
     // 한 팀만 남은 경우 매치 종료
-    const aliveTeams = Array.from(teamSurvivors.entries()).filter(([_, count]) => count > 0);
+    const aliveTeamIds = Array.from(teamSurvivors.entries())
+      .filter(([, count]) => count > 0)
+      .map(([teamId]) => teamId);
     
-    if (aliveTeams.length <= 1) {
-      const winningTeamId = aliveTeams.length === 1 ? aliveTeams[0][0] : null;
+    if (aliveTeamIds.length <= 1) {
+      const winningTeamId = aliveTeamIds.length === 1 ? aliveTeamIds[0] : null;
       await this.endMatch(match, winningTeamId);
     }
     
@@ -817,7 +819,7 @@ export class PvPSystem {
     match.battleLog.push(battleEvent);
   }
 
-  private createDefaultRanking(player: any): PvPRanking {
+  private createDefaultRanking(player: { id: string; name: string; level?: number }): PvPRanking {
     return {
       playerId: player.id,
       playerName: player.name,
@@ -877,28 +879,28 @@ export class PvPSystem {
     return Math.floor(totalWaitTime / queue.players.length / 1000); // 초 단위
   }
 
-  private async processSkill(match: PvPMatch, caster: PvPParticipant, skillId: string, targetId?: string): Promise<any> {
+  private async processSkill(_match: PvPMatch, _caster: PvPParticipant, _skillId: string, _targetId?: string): Promise<{ message: string }> {
     // 스킬 시스템과 연동하여 구현
     return { message: '스킬 사용 (구현 예정)' };
   }
 
-  private async processItem(match: PvPMatch, user: PvPParticipant, itemId: string): Promise<any> {
+  private async processItem(_match: PvPMatch, _user: PvPParticipant, _itemId: string): Promise<{ message: string }> {
     // 아이템 시스템과 연동하여 구현
     return { message: '아이템 사용 (구현 예정)' };
   }
 
-  private async processDefend(match: PvPMatch, defender: PvPParticipant): Promise<any> {
+  private async processDefend(_match: PvPMatch, _defender: PvPParticipant): Promise<{ message: string }> {
     // 방어 처리
     return { message: '방어 자세' };
   }
 
-  private async processForfeit(match: PvPMatch, player: PvPParticipant): Promise<any> {
+  private async processForfeit(_match: PvPMatch, player: PvPParticipant): Promise<{ message: string }> {
     // 기권 처리
     player.isAlive = false;
     return { message: '기권' };
   }
 
-  private async getPlayerInfo(playerId: string): Promise<Player | null> {
+  private async getPlayerInfo(_playerId: string): Promise<Player | null> {
     // 실제 구현시 플레이어 데이터 소스에서 가져와야 함
     return null;
   }

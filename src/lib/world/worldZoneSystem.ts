@@ -496,8 +496,8 @@ export class WorldZoneSystem {
       lastActivity: new Date(),
       status: 'active',
       visibility: 'visible',
-      partyId: player.partyId,
-      guildId: player.guildId,
+      partyId: player.partyId || undefined,
+      guildId: player.guildId || undefined,
       isAfk: false
     };
 

@@ -220,11 +220,11 @@ export class SkillTreeSystem {
    */
   getSkillPointSystem(player: Player): SkillPointSystem {
     const pointsPerLevel = 3; // 레벨당 3 스킬 포인트
-    const totalPoints = player.level * pointsPerLevel;
+    const totalPoints = (player.level || 0) * pointsPerLevel;
     
     // 사용된 포인트 계산
     let usedPoints = 0;
-    Object.values(player.skills).forEach(skill => {
+    Object.values(player.skills ?? {}).forEach(skill => {
       usedPoints += this.calculateSkillPointCost(skill.id, skill.level);
     });
 
@@ -291,7 +291,8 @@ export class SkillTreeSystem {
     evolutionAvailable?: SkillEvolution;
     error?: string;
   } {
-    const skill = player.skills[skillId];
+    const skillsMap = player.skills ?? {} as Record<string, any>;
+    const skill = skillsMap[skillId];
     if (!skill) {
       return {
         success: false,
@@ -366,7 +367,7 @@ export class SkillTreeSystem {
     newLevel: number;
     effectsGained: SkillEffect[];
   } {
-    const skill = player.skills[skillId];
+    const skill = (player.skills ?? {})[skillId];
     if (!skill) {
       return { levelsGained: 0, newLevel: 0, effectsGained: [] };
     }
@@ -413,7 +414,8 @@ export class SkillTreeSystem {
     evolvedSkill: string;
     error?: string;
   } {
-    const baseSkill = player.skills[evolution.baseSkillId];
+    const skillsMap = player.skills ?? {} as Record<string, any>;
+    const baseSkill = skillsMap[evolution.baseSkillId];
     if (!baseSkill || baseSkill.level < evolution.requirements.level) {
       return {
         success: false,
@@ -425,7 +427,7 @@ export class SkillTreeSystem {
     // 다른 스킬 요구사항 확인
     if (evolution.requirements.otherSkills) {
       for (const req of evolution.requirements.otherSkills) {
-        const requiredSkill = player.skills[req.skillId];
+        const requiredSkill = skillsMap[req.skillId];
         if (!requiredSkill || requiredSkill.level < req.level) {
           return {
             success: false,
@@ -450,8 +452,9 @@ export class SkillTreeSystem {
     }
 
     // 진화 실행
-    delete player.skills[evolution.baseSkillId];
-    player.skills[evolution.evolvedSkillId] = {
+    player.skills = player.skills ?? {} as any;
+    delete (player.skills as any)[evolution.baseSkillId];
+    (player.skills as any)[evolution.evolvedSkillId] = {
       id: evolution.evolvedSkillId,
       level: 1,
       experience: 0,
@@ -477,7 +480,8 @@ export class SkillTreeSystem {
   } {
     // 필요 스킬 확인
     for (const req of combination.requiredSkills) {
-      const skill = player.skills[req.skillId];
+      const skillsMap = player.skills ?? {} as Record<string, any>;
+      const skill = skillsMap[req.skillId];
       if (!skill || skill.level < req.level) {
         return {
           success: false,
@@ -495,9 +499,10 @@ export class SkillTreeSystem {
       case 'evolve':
         // 일부 스킬을 소모하고 새 스킬 생성
         combination.requiredSkills.forEach(req => {
-          if (player.skills[req.skillId]) {
-            player.skills[req.skillId].level = Math.max(0, 
-              player.skills[req.skillId].level - Math.floor(req.level / 2)
+          const skillsMap = player.skills ?? {} as Record<string, any>;
+          if (skillsMap[req.skillId]) {
+            skillsMap[req.skillId].level = Math.max(0, 
+              skillsMap[req.skillId].level - Math.floor(req.level / 2)
             );
           }
         });
@@ -505,15 +510,17 @@ export class SkillTreeSystem {
       case 'transcend':
         // 모든 관련 스킬을 최대 레벨로 만들고 초월 스킬 생성
         combination.requiredSkills.forEach(req => {
-          if (player.skills[req.skillId]) {
-            delete player.skills[req.skillId];
+          const skillsMap = player.skills ?? {} as Record<string, any>;
+          if (skillsMap[req.skillId]) {
+            delete skillsMap[req.skillId];
           }
         });
         break;
     }
 
     // 새 스킬 생성
-    player.skills[combination.resultSkill] = {
+    player.skills = player.skills ?? {} as any;
+    (player.skills as any)[combination.resultSkill] = {
       id: combination.resultSkill,
       level: 1,
       experience: 0,

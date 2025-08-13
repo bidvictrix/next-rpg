@@ -25,6 +25,7 @@ export interface SkillEffect {
   value: number;
   stat?: string;
   duration?: number;
+  isPercentage?: boolean;
   scaling?: {
     stat: string;
     ratio: number;
@@ -40,6 +41,7 @@ export interface SkillRequirement {
   id?: string;
   type: 'level' | 'skill' | 'stat' | 'item' | 'quest' | 'class';
   target?: string;
+  stat?: string;
   value: string | number;
   amount?: number;
   description?: string;
@@ -97,8 +99,13 @@ export interface Player {
 }
 
 // 스킬 트리(넓은 형태)
+export interface SkillTreeCategoryNode {
+  id: string;
+  name: string;
+}
+
 export interface SkillTree {
-  categories?: Record<string, any>;
+  categories?: Record<string, SkillTreeCategoryNode>;
   totalSkillPoints?: number;
   usedSkillPoints?: number;
   availableSkillPoints?: number;
@@ -312,7 +319,8 @@ export const createBasicMonster = (id: string, name: string, level: number): Mon
   };
 };
 
-// 아이템 타입 정의
+// 중복 정의 제거를 위해 아래 중복 블럭 제거
+/*
 export interface Item {
   id: string;
   name: string;
@@ -696,3 +704,4 @@ export const createBasicMonster = (
     appearance: `일반적인 ${name}의 모습`
   };
 };
+*/

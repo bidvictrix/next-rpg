@@ -1,0 +1,262 @@
+{
+  "activeEvents": {
+    "double_exp_weekend": {
+      "id": "double_exp_weekend",
+      "name": "주말 더블 경험치",
+      "description": "주말 동안 모든 경험치가 2배로 증가합니다",
+      "type": "exp_boost",
+      "startTime": "2025-08-16T00:00:00.000Z",
+      "endTime": "2025-08-18T23:59:59.000Z",
+      "duration": 2880,
+      "effects": [
+        {
+          "type": "experience_multiplier",
+          "multiplier": 2.0,
+          "description": "경험치 2배 증가"
+        }
+      ],
+      "recurring": true,
+      "schedule": "0 0 * * 6",
+      "targetLevels": { "min": 1, "max": 999999 },
+      "active": true
+    },
+    "rare_drop_event": {
+      "id": "rare_drop_event",
+      "name": "레어 아이템 드롭 이벤트",
+      "description": "모든 몬스터에서 레어 아이템 드롭률이 증가합니다",
+      "type": "drop_boost",
+      "startTime": "2025-08-13T12:00:00.000Z",
+      "endTime": "2025-08-20T12:00:00.000Z",
+      "duration": 10080,
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "multiplier": 1.5,
+          "description": "레어 아이템 드롭률 50% 증가"
+        }
+      ],
+      "recurring": false,
+      "targetAreas": ["dark_forest", "goblin_camp", "mountain_pass"],
+      "active": true
+    },
+    "dragon_awakening": {
+      "id": "dragon_awakening",
+      "name": "드래곤의 각성",
+      "description": "고대 드래곤이 각성하여 특별한 보상을 제공합니다",
+      "type": "special_spawn",
+      "startTime": "2025-08-15T20:00:00.000Z",
+      "endTime": "2025-08-15T22:00:00.000Z",
+      "duration": 120,
+      "effects": [
+        {
+          "type": "boss_spawn",
+          "multiplier": 1.0,
+          "description": "드래곤 보스 등장"
+        }
+      ],
+      "rewards": [
+        {
+          "condition": "participation",
+          "items": [
+            {
+              "itemId": "dragon_scale",
+              "quantity": 3
+            },
+            {
+              "itemId": "ancient_tome",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "condition": "top_damage",
+          "items": [
+            {
+              "itemId": "legendary_sword",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "recurring": false,
+      "targetAreas": ["dragon_lair"],
+      "active": false
+    },
+    "pvp_tournament": {
+      "id": "pvp_tournament",
+      "name": "PvP 토너먼트",
+      "description": "플레이어 간 전투 토너먼트가 개최됩니다",
+      "type": "pvp",
+      "startTime": "2025-08-17T18:00:00.000Z",
+      "endTime": "2025-08-17T21:00:00.000Z",
+      "duration": 180,
+      "effects": [
+        {
+          "type": "pvp_rewards_boost",
+          "multiplier": 2.0,
+          "description": "PvP 보상 2배 증가"
+        }
+      ],
+      "rewards": [
+        {
+          "condition": "tournament_winner",
+          "items": [
+            {
+              "itemId": "champion_crown",
+              "quantity": 1
+            },
+            {
+              "itemId": "tournament_trophy",
+              "quantity": 1
+            }
+          ]
+        },
+        {
+          "condition": "tournament_participant",
+          "items": [
+            {
+              "itemId": "participation_medal",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "recurring": true,
+      "schedule": "0 18 * * 6",
+      "targetLevels": { "min": 20, "max": 999999 },
+      "active": false
+    }
+  },
+  "scheduledEvents": {
+    "monthly_raid": {
+      "id": "monthly_raid",
+      "name": "월간 레이드",
+      "description": "매월 특별한 레이드 보스가 등장합니다",
+      "type": "raid",
+      "schedule": "0 20 1 * *",
+      "duration": 180,
+      "effects": [
+        {
+          "type": "special_boss_spawn",
+          "multiplier": 1.0,
+          "description": "월간 레이드 보스 등장"
+        }
+      ],
+      "rewards": [
+        {
+          "condition": "raid_clear",
+          "items": [
+            {
+              "itemId": "monthly_reward_box",
+              "quantity": 1
+            }
+          ]
+        }
+      ],
+      "targetLevels": { "min": 30, "max": 999999 },
+      "enabled": true
+    },
+    "beginner_support": {
+      "id": "beginner_support",
+      "name": "초보자 지원 이벤트",
+      "description": "새로운 플레이어를 위한 지원 이벤트",
+      "type": "exp_boost",
+      "schedule": "0 0 * * *",
+      "duration": 1440,
+      "effects": [
+        {
+          "type": "newbie_exp_boost",
+          "multiplier": 3.0,
+          "description": "신규 플레이어 경험치 3배"
+        },
+        {
+          "type": "starter_items",
+          "multiplier": 1.0,
+          "description": "시작 아이템 지급"
+        }
+      ],
+      "targetLevels": { "min": 1, "max": 10 },
+      "enabled": true
+    }
+  },
+  "eventTemplates": {
+    "exp_boost_template": {
+      "name": "경험치 부스트 템플릿",
+      "type": "exp_boost",
+      "defaultDuration": 720,
+      "effects": [
+        {
+          "type": "experience_multiplier",
+          "multiplier": 2.0,
+          "description": "경험치 2배 증가"
+        }
+      ]
+    },
+    "drop_boost_template": {
+      "name": "드롭률 부스트 템플릿",
+      "type": "drop_boost",
+      "defaultDuration": 1440,
+      "effects": [
+        {
+          "type": "drop_rate_multiplier",
+          "multiplier": 1.5,
+          "description": "드롭률 50% 증가"
+        }
+      ]
+    },
+    "boss_spawn_template": {
+      "name": "보스 스폰 템플릿",
+      "type": "special_spawn",
+      "defaultDuration": 120,
+      "effects": [
+        {
+          "type": "boss_spawn",
+          "multiplier": 1.0,
+          "description": "특별 보스 등장"
+        }
+      ]
+    }
+  },
+  "eventHistory": [
+    {
+      "id": "summer_festival_2025",
+      "name": "2025 여름 축제",
+      "startTime": "2025-07-01T00:00:00.000Z",
+      "endTime": "2025-07-31T23:59:59.000Z",
+      "participants": 1250,
+      "rewards_given": {
+        "summer_tokens": 12500,
+        "festival_items": 3200
+      },
+      "status": "completed"
+    },
+    {
+      "id": "valentine_event_2025",
+      "name": "2025 발렌타인 이벤트",
+      "startTime": "2025-02-14T00:00:00.000Z",
+      "endTime": "2025-02-14T23:59:59.000Z",
+      "participants": 890,
+      "rewards_given": {
+        "valentine_chocolates": 2670,
+        "love_potions": 890
+      },
+      "status": "completed"
+    }
+  ],
+  "eventSettings": {
+    "maxConcurrentEvents": 5,
+    "eventNotificationAdvance": 3600,
+    "autoEventEnabled": true,
+    "playerCreateEvents": false,
+    "guildEventEnabled": true,
+    "eventLogRetention": 90,
+    "eventRewardsEnabled": true
+  },
+  "eventStats": {
+    "totalEventsRun": 45,
+    "averageParticipation": 750,
+    "mostPopularEventType": "exp_boost",
+    "totalRewardsGiven": 125000,
+    "playerSatisfactionScore": 8.5
+  }
+}

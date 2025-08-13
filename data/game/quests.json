@@ -1,0 +1,445 @@
+{
+  "quests": {
+    "starter_quest_001": {
+      "id": "starter_quest_001",
+      "name": "첫 걸음",
+      "description": "모험가의 길에 첫 발을 내딛어보자",
+      "story": "마을 촌장이 새로운 모험가인 당신에게 기본적인 임무를 맡겼습니다. 들판에서 슬라임을 처치하고 슬라임 젤을 수집해오세요.",
+      "type": "main",
+      "difficulty": "easy",
+      "requirements": {
+        "level": 1
+      },
+      "objectives": [
+        {
+          "id": "kill_slime",
+          "type": "kill",
+          "target": "slime",
+          "quantity": 10,
+          "currentProgress": 0,
+          "description": "슬라임 10마리 처치",
+          "completed": false
+        },
+        {
+          "id": "collect_slime_gel",
+          "type": "collect",
+          "target": "slime_gel",
+          "quantity": 5,
+          "currentProgress": 0,
+          "description": "슬라임 젤 5개 수집",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 200,
+        "gold": 100,
+        "items": [
+          {
+            "itemId": "health_potion",
+            "quantity": 3
+          },
+          {
+            "itemId": "iron_sword",
+            "quantity": 1
+          }
+        ],
+        "skillPoints": 1
+      },
+      "giver": "village_chief",
+      "turnIn": "village_chief",
+      "repeatable": false,
+      "nextQuest": "starter_quest_002"
+    },
+    "starter_quest_002": {
+      "id": "starter_quest_002",
+      "name": "숲의 위험",
+      "description": "어둠의 숲에서 고블린들을 처치하자",
+      "story": "마을 근처 숲에서 고블린들이 출몰하고 있습니다. 마을 사람들의 안전을 위해 고블린들을 처치해주세요.",
+      "type": "main",
+      "difficulty": "normal",
+      "requirements": {
+        "level": 8,
+        "completedQuests": ["starter_quest_001"]
+      },
+      "objectives": [
+        {
+          "id": "kill_goblin",
+          "type": "kill",
+          "target": "goblin",
+          "quantity": 15,
+          "currentProgress": 0,
+          "description": "고블린 15마리 처치",
+          "completed": false
+        },
+        {
+          "id": "explore_dark_forest",
+          "type": "explore",
+          "target": "dark_forest",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "어둠의 숲 탐험",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 500,
+        "gold": 300,
+        "items": [
+          {
+            "itemId": "chainmail_armor",
+            "quantity": 1
+          }
+        ],
+        "skillPoints": 2,
+        "unlockAreas": ["goblin_camp"]
+      },
+      "giver": "village_chief",
+      "turnIn": "village_chief",
+      "repeatable": false,
+      "nextQuest": "main_quest_001"
+    },
+    "main_quest_001": {
+      "id": "main_quest_001",
+      "name": "오크 족장의 위협",
+      "description": "강력한 오크 족장을 처치하여 마을을 구하자",
+      "story": "산 너머에서 오크 족장이 대군을 이끌고 마을을 위협하고 있습니다. 오크 족장을 처치하여 마을을 구해주세요.",
+      "type": "main",
+      "difficulty": "hard",
+      "requirements": {
+        "level": 20,
+        "completedQuests": ["starter_quest_002"]
+      },
+      "objectives": [
+        {
+          "id": "kill_orc_chief",
+          "type": "kill",
+          "target": "orc_chief",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "오크 족장 처치",
+          "completed": false
+        },
+        {
+          "id": "collect_orc_banner",
+          "type": "collect",
+          "target": "orc_banner",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "오크 깃발 획득",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 2000,
+        "gold": 1000,
+        "items": [
+          {
+            "itemId": "legendary_sword",
+            "quantity": 1
+          }
+        ],
+        "skillPoints": 5,
+        "statPoints": 3,
+        "unlockSkills": ["power_strike"]
+      },
+      "giver": "village_chief",
+      "turnIn": "village_chief",
+      "repeatable": false,
+      "nextQuest": "dragon_quest_001"
+    },
+    "dragon_quest_001": {
+      "id": "dragon_quest_001",
+      "name": "전설의 드래곤",
+      "description": "고대 드래곤을 처치하는 최종 임무",
+      "story": "수백 년간 잠들어 있던 고대 드래곤이 깨어났습니다. 세계의 평화를 위해 드래곤을 처치해야 합니다.",
+      "type": "main",
+      "difficulty": "extreme",
+      "requirements": {
+        "level": 40,
+        "completedQuests": ["main_quest_001"],
+        "items": [
+          {
+            "itemId": "dragon_key",
+            "quantity": 1
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "id": "kill_ancient_dragon",
+          "type": "kill",
+          "target": "ancient_dragon",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "고대 드래곤 처치",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 50000,
+        "gold": 50000,
+        "items": [
+          {
+            "itemId": "dragon_heart",
+            "quantity": 1
+          },
+          {
+            "itemId": "ancient_tome",
+            "quantity": 5
+          }
+        ],
+        "skillPoints": 20,
+        "statPoints": 10
+      },
+      "giver": "ancient_sage",
+      "turnIn": "ancient_sage",
+      "repeatable": false
+    },
+    "daily_hunt_001": {
+      "id": "daily_hunt_001",
+      "name": "일일 사냥 - 슬라임",
+      "description": "매일 슬라임을 처치하여 보상을 받자",
+      "story": "마을 근처에 슬라임들이 계속 나타나고 있습니다. 매일 일정 수의 슬라임을 처치해주세요.",
+      "type": "daily",
+      "difficulty": "easy",
+      "requirements": {
+        "level": 5
+      },
+      "objectives": [
+        {
+          "id": "daily_kill_slime",
+          "type": "kill",
+          "target": "slime",
+          "quantity": 20,
+          "currentProgress": 0,
+          "description": "슬라임 20마리 처치",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 300,
+        "gold": 150,
+        "items": [
+          {
+            "itemId": "health_potion",
+            "quantity": 5
+          }
+        ]
+      },
+      "giver": "field_guard",
+      "turnIn": "field_guard",
+      "repeatable": true,
+      "resetTime": "daily"
+    },
+    "weekly_boss_001": {
+      "id": "weekly_boss_001",
+      "name": "주간 보스 - 오크 족장",
+      "description": "주간 보스를 처치하여 특별한 보상을 받자",
+      "story": "강력한 오크 족장이 일주일마다 부활합니다. 주간 보스를 처치하여 특별한 보상을 획득하세요.",
+      "type": "weekly",
+      "difficulty": "hard",
+      "requirements": {
+        "level": 25
+      },
+      "objectives": [
+        {
+          "id": "weekly_kill_orc_chief",
+          "type": "kill",
+          "target": "weekly_orc_chief",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "주간 오크 족장 처치",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 5000,
+        "gold": 2000,
+        "items": [
+          {
+            "itemId": "epic_weapon_box",
+            "quantity": 1
+          },
+          {
+            "itemId": "skill_book_rare",
+            "quantity": 1
+          }
+        ],
+        "skillPoints": 3
+      },
+      "giver": "guild_master",
+      "turnIn": "guild_master",
+      "repeatable": true,
+      "resetTime": "weekly"
+    },
+    "side_quest_001": {
+      "id": "side_quest_001",
+      "name": "잃어버린 반지",
+      "description": "마을 주민이 잃어버린 반지를 찾아주자",
+      "story": "마을의 한 주민이 소중한 반지를 들판에서 잃어버렸습니다. 반지를 찾아서 돌려주세요.",
+      "type": "side",
+      "difficulty": "easy",
+      "requirements": {
+        "level": 3
+      },
+      "objectives": [
+        {
+          "id": "find_lost_ring",
+          "type": "collect",
+          "target": "lost_ring",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "잃어버린 반지 찾기",
+          "completed": false
+        },
+        {
+          "id": "deliver_ring",
+          "type": "deliver",
+          "target": "worried_citizen",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "반지를 주민에게 전달",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "gold": 200,
+        "items": [
+          {
+            "itemId": "bronze_ring",
+            "quantity": 1
+          }
+        ]
+      },
+      "giver": "worried_citizen",
+      "turnIn": "worried_citizen",
+      "repeatable": false
+    },
+    "craft_quest_001": {
+      "id": "craft_quest_001",
+      "name": "철검 제작",
+      "description": "대장장이를 위해 철검을 제작하자",
+      "story": "마을 대장장이가 철검 제작법을 가르쳐주겠다고 합니다. 필요한 재료를 모아서 철검을 제작해보세요.",
+      "type": "side",
+      "difficulty": "normal",
+      "requirements": {
+        "level": 10
+      },
+      "objectives": [
+        {
+          "id": "collect_iron_ore",
+          "type": "collect",
+          "target": "iron_ore",
+          "quantity": 10,
+          "currentProgress": 0,
+          "description": "철광석 10개 수집",
+          "completed": false
+        },
+        {
+          "id": "craft_iron_sword",
+          "type": "craft",
+          "target": "iron_sword",
+          "quantity": 1,
+          "currentProgress": 0,
+          "description": "철검 1개 제작",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 400,
+        "gold": 300,
+        "unlockSkills": ["blacksmithing"],
+        "skillPoints": 2
+      },
+      "giver": "blacksmith",
+      "turnIn": "blacksmith",
+      "repeatable": false
+    },
+    "guild_quest_001": {
+      "id": "guild_quest_001",
+      "name": "길드 창설",
+      "description": "길드를 창설하여 동료들과 함께 모험을 떠나자",
+      "story": "혼자서는 처치할 수 없는 강력한 몬스터들이 나타나고 있습니다. 길드를 창설하여 동료들과 힘을 합쳐보세요.",
+      "type": "guild",
+      "difficulty": "normal",
+      "requirements": {
+        "level": 15
+      },
+      "objectives": [
+        {
+          "id": "gather_guild_members",
+          "type": "talk",
+          "target": "potential_members",
+          "quantity": 5,
+          "currentProgress": 0,
+          "description": "길드원 5명 모집",
+          "completed": false
+        },
+        {
+          "id": "pay_guild_fee",
+          "type": "deliver",
+          "target": "guild_registrar",
+          "quantity": 1000,
+          "currentProgress": 0,
+          "description": "길드 등록비 1000골드 지불",
+          "completed": false
+        }
+      ],
+      "rewards": {
+        "experience": 1000,
+        "gold": 500,
+        "unlockAreas": ["guild_hall"]
+      },
+      "giver": "guild_registrar",
+      "turnIn": "guild_registrar",
+      "repeatable": false
+    }
+  },
+  "questCategories": {
+    "main_story": {
+      "name": "메인 스토리",
+      "description": "게임의 주요 스토리를 진행하는 퀘스트들",
+      "quests": ["starter_quest_001", "starter_quest_002", "main_quest_001", "dragon_quest_001"]
+    },
+    "daily_missions": {
+      "name": "일일 임무",
+      "description": "매일 수행할 수 있는 반복 퀘스트들",
+      "quests": ["daily_hunt_001"]
+    },
+    "weekly_challenges": {
+      "name": "주간 도전",
+      "description": "매주 수행할 수 있는 어려운 퀘스트들",
+      "quests": ["weekly_boss_001"]
+    },
+    "side_stories": {
+      "name": "사이드 스토리",
+      "description": "선택적으로 수행할 수 있는 보조 퀘스트들",
+      "quests": ["side_quest_001", "craft_quest_001"]
+    },
+    "guild_missions": {
+      "name": "길드 임무",
+      "description": "길드와 관련된 특별한 퀘스트들",
+      "quests": ["guild_quest_001"]
+    }
+  },
+  "questChains": {
+    "starter_chain": {
+      "name": "초보자 연쇄 퀘스트",
+      "description": "게임 시작부터 진행하는 연쇄 퀘스트",
+      "quests": ["starter_quest_001", "starter_quest_002", "main_quest_001", "dragon_quest_001"],
+      "rewards": {
+        "chainComplete": {
+          "experience": 10000,
+          "gold": 5000,
+          "items": [
+            {
+              "itemId": "hero_title",
+              "quantity": 1
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "gameSettings": {
+    "serverName": "MMO Text RPG Server",
+    "version": "1.0.0",
+    "maxPlayers": 1000,
+    "maintenanceMode": false,
+    "registrationEnabled": true,
+    "guestLoginEnabled": false,
+    "serverMessage": "서버에 오신 것을 환영합니다!",
+    "serverStatus": "online"
+  },
+  "experienceSettings": {
+    "baseExpMultiplier": 1.0,
+    "levelCapEnabled": false,
+    "maxLevel": 999999,
+    "expCurveType": "exponential",
+    "expCurveMultiplier": 1.2,
+    "expBonusEvents": true,
+    "partyExpBonus": 1.2,
+    "guildExpBonus": 1.1
+  },
+  "combatSettings": {
+    "pvpEnabled": true,
+    "pvpLevelRestriction": 10,
+    "damageMultiplier": 1.0,
+    "criticalChanceBase": 5.0,
+    "criticalDamageMultiplier": 1.5,
+    "missChanceBase": 5.0,
+    "deathPenalty": {
+      "enabled": true,
+      "expLoss": 5.0,
+      "goldLoss": 10.0,
+      "itemDropChance": 0.0
+    }
+  },
+  "economySettings": {
+    "startingGold": 100,
+    "goldDropMultiplier": 1.0,
+    "shopPriceMultiplier": 1.0,
+    "repairCostMultiplier": 1.0,
+    "taxRate": 0.05,
+    "auctionHouseFee": 0.1,
+    "inflationControl": true,
+    "dailyGoldLimit": 100000
+  },
+  "itemSettings": {
+    "dropRateMultiplier": 1.0,
+    "rareDropBonus": 1.0,
+    "durabilityEnabled": true,
+    "itemDecayRate": 1.0,
+    "maxInventorySize": 100,
+    "autoPickupEnabled": true,
+    "itemBindingEnabled": false
+  },
+  "skillSettings": {
+    "skillPointsPerLevel": 1,
+    "skillExpMultiplier": 1.0,
+    "skillCooldownMultiplier": 1.0,
+    "manaCostMultiplier": 1.0,
+    "skillEvolutionEnabled": true,
+    "skillCombinationEnabled": true,
+    "maxActiveSkills": 8
+  },
+  "socialSettings": {
+    "chatEnabled": true,
+    "globalChatLevel": 5,
+    "whisperEnabled": true,
+    "guildChatEnabled": true,
+    "partyChatEnabled": true,
+    "chatFilterEnabled": true,
+    "friendListEnabled": true,
+    "maxFriends": 100,
+    "blockListEnabled": true
+  },
+  "guildSettings": {
+    "guildCreationLevel": 15,
+    "guildCreationCost": 10000,
+    "maxGuildMembers": 50,
+    "guildLevelEnabled": true,
+    "guildSkillsEnabled": true,
+    "guildWarEnabled": true,
+    "guildTaxEnabled": true,
+    "guildBankEnabled": true
+  },
+  "questSettings": {
+    "dailyQuestReset": "00:00",
+    "weeklyQuestReset": "Monday 00:00",
+    "questExpMultiplier": 1.0,
+    "questGoldMultiplier": 1.0,
+    "maxActiveQuests": 20,
+    "questSharingEnabled": true,
+    "questChainBonusEnabled": true
+  },
+  "eventSettings": {
+    "eventSystemEnabled": true,
+    "doubleExpEvents": true,
+    "specialDropEvents": true,
+    "seasonalEvents": true,
+    "playerEvents": true,
+    "automaticEvents": true,
+    "eventNotifications": true
+  },
+  "securitySettings": {
+    "antiCheatEnabled": true,
+    "speedHackDetection": true,
+    "goldHackDetection": true,
+    "itemDupeDetection": true,
+    "logSuspiciousActivity": true,
+    "autobanEnabled": false,
+    "reportSystemEnabled": true
+  },
+  "performanceSettings": {
+    "maxConcurrentBattles": 500,
+    "dataAutosaveInterval": 300,
+    "logRotationDays": 7,
+    "cacheEnabled": true,
+    "compressionEnabled": true,
+    "loadBalancingEnabled": false
+  },
+  "notificationSettings": {
+    "systemAnnouncements": true,
+    "levelUpAnnouncements": true,
+    "rareDropAnnouncements": true,
+    "pvpKillAnnouncements": true,
+    "guildNewsEnabled": true,
+    "maintenanceNotifications": true,
+    "emailNotificationsEnabled": false
+  },
+  "moderationSettings": {
+    "autoModeration": true,
+    "badWordFilter": true,
+    "spamDetection": true,
+    "reportQueue": true,
+    "moderatorTools": true,
+    "playerRestrictions": {
+      "muteDuration": 3600,
+      "tempbanDuration": 86400,
+      "maxWarnings": 3
+    }
+  },
+  "backupSettings": {
+    "autoBackup": true,
+    "backupInterval": 21600,
+    "maxBackupFiles": 10,
+    "backupCompression": true,
+    "cloudBackupEnabled": false,
+    "backupPath": "./backups/"
+  },
+  "debugSettings": {
+    "debugMode": false,
+    "verboseLogging": false,
+    "performanceMonitoring": true,
+    "errorReporting": true,
+    "stackTraceEnabled": true,
+    "memoryMonitoring": true
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "info": {
+    "id": "player_001",
+    "username": "testuser",
+    "email": "test@example.com",
+    "createdAt": "2025-08-13T10:00:00.000Z",
+    "lastLoginAt": "2025-08-13T15:30:00.000Z",
+    "isOnline": true,
+    "characterName": "용사",
+    "class": "warrior"
+  },
+  "level": {
+    "level": 15,
+    "experience": 2450,
+    "experienceToNext": 3000,
+    "statPoints": 3,
+    "skillPoints": 2
+  },
+  "stats": {
+    "str": 25,
+    "dex": 18,
+    "int": 12,
+    "vit": 22,
+    "luk": 15,
+    "hp": 295,
+    "mp": 165,
+    "atk": 68,
+    "def": 43,
+    "acc": 29.4,
+    "eva": 13.8,
+    "crit": 15.9
+  },
+  "equipment": {
+    "weapon": "iron_sword_001",
+    "helmet": "leather_helmet_001",
+    "armor": "iron_armor_001",
+    "gloves": "leather_gloves_001",
+    "boots": "leather_boots_001",
+    "accessory1": null,
+    "accessory2": null,
+    "ring1": "bronze_ring_001",
+    "ring2": null
+  },
+  "inventory": [
+    {
+      "itemId": "health_potion",
+      "quantity": 5,
+      "slot": 0
+    },
+    {
+      "itemId": "mana_potion",
+      "quantity": 3,
+      "slot": 1
+    },
+    {
+      "itemId": "iron_ore",
+      "quantity": 12,
+      "slot": 2
+    },
+    {
+      "itemId": "monster_bone",
+      "quantity": 8,
+      "slot": 3
+    }
+  ],
+  "inventorySize": 40,
+  "location": {
+    "areaId": "starter_town",
+    "x": 150,
+    "y": 200,
+    "mapName": "초보자 마을"
+  },
+  "skills": [
+    {
+      "skillId": "slash",
+      "level": 3,
+      "experience": 250,
+      "equipped": true
+    },
+    {
+      "skillId": "power_strike",
+      "level": 2,
+      "experience": 120,
+      "equipped": true
+    },
+    {
+      "skillId": "defense_stance",
+      "level": 1,
+      "experience": 50,
+      "equipped": false
+    }
+  ],
+  "quests": [
+    {
+      "questId": "starter_quest_001",
+      "status": "completed",
+      "progress": {
+        "kill_slime": 10,
+        "collect_slime_gel": 5
+      },
+      "acceptedAt": "2025-08-13T10:30:00.000Z",
+      "completedAt": "2025-08-13T12:15:00.000Z"
+    },
+    {
+      "questId": "town_defense_001",
+      "status": "accepted",
+      "progress": {
+        "kill_goblin": 3,
+        "required_goblin": 10
+      },
+      "acceptedAt": "2025-08-13T14:00:00.000Z"
+    }
+  ],
+  "gold": 1250,
+  "playtime": 450,
+  "pvpRank": 0,
+  "pvpPoints": 0,
+  "guildId": null,
+  "guildRank": null,
+  "activeEffects": {
+    "buffs": [
+      {
+        "effectId": "strength_boost",
+        "skillId": "warrior_blessing",
+        "type": "stat_boost",
+        "value": 5,
+        "duration": 300,
+        "stackCount": 1,
+        "maxStack": 3,
+        "appliedAt": "2025-08-13T15:00:00.000Z"
+      }
+    ],
+    "debuffs": [],
+    "toggles": ["defense_stance"]
+  },
+  "settings": {
+    "autoPickup": true,
+    "showDamageNumbers": true,
+    "chatFilter": false,
+    "soundEnabled": true,
+    "notifications": {
+      "levelUp": true,
+      "questComplete": true,
+      "itemDrop": false
+    }
+  }
+}

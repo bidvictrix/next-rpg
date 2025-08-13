@@ -1,0 +1,424 @@
+{
+  "areas": {
+    "starter_town": {
+      "id": "starter_town",
+      "name": "초보자 마을",
+      "description": "모험가들이 처음 발을 디디는 평화로운 마을",
+      "type": "town",
+      "size": { "width": 500, "height": 400 },
+      "safeZone": true,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "starter_field",
+          "position": { "x": 450, "y": 200 }
+        }
+      ],
+      "monsterSpawns": [],
+      "npcs": [
+        {
+          "npcId": "village_chief",
+          "position": { "x": 250, "y": 150 }
+        },
+        {
+          "npcId": "weapon_merchant",
+          "position": { "x": 150, "y": 100 }
+        },
+        {
+          "npcId": "potion_seller",
+          "position": { "x": 350, "y": 120 }
+        },
+        {
+          "npcId": "skill_trainer",
+          "position": { "x": 250, "y": 300 }
+        }
+      ],
+      "objects": [
+        {
+          "id": "town_fountain",
+          "type": "shrine",
+          "position": { "x": 250, "y": 200 },
+          "interactive": true
+        },
+        {
+          "id": "storage_chest",
+          "type": "chest",
+          "position": { "x": 100, "y": 300 },
+          "interactive": true
+        }
+      ],
+      "bgm": "peaceful_town",
+      "atmosphere": "따뜻한 햇살이 내리쬐는 평화로운 마을. 새들의 지저귐과 상인들의 목소리가 들린다."
+    },
+    "starter_field": {
+      "id": "starter_field",
+      "name": "초보자의 들판",
+      "description": "마을 근처의 안전한 들판, 약한 몬스터들이 서식한다",
+      "type": "field",
+      "size": { "width": 800, "height": 600 },
+      "safeZone": false,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "starter_town",
+          "position": { "x": 50, "y": 300 }
+        },
+        {
+          "areaId": "forest_entrance",
+          "position": { "x": 750, "y": 400 },
+          "requirement": "level_5"
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "slime",
+          "spawnPoints": [
+            { "x": 200, "y": 150 },
+            { "x": 400, "y": 200 },
+            { "x": 300, "y": 400 },
+            { "x": 600, "y": 250 }
+          ],
+          "maxCount": 8,
+          "respawnTime": 180
+        }
+      ],
+      "npcs": [
+        {
+          "npcId": "field_guard",
+          "position": { "x": 100, "y": 300 }
+        }
+      ],
+      "objects": [
+        {
+          "id": "herb_patch_1",
+          "type": "resource",
+          "position": { "x": 150, "y": 450 },
+          "interactive": true,
+          "rewards": [
+            {
+              "itemId": "healing_herb",
+              "quantity": 1,
+              "chance": 70
+            }
+          ]
+        }
+      ],
+      "bgm": "peaceful_field",
+      "atmosphere": "부드러운 바람이 불어오는 푸른 들판. 멀리서 슬라임들이 천천히 움직이는 모습이 보인다."
+    },
+    "forest_entrance": {
+      "id": "forest_entrance",
+      "name": "숲 입구",
+      "description": "어둠의 숲으로 들어가는 입구",
+      "type": "field",
+      "requirements": {
+        "level": 5
+      },
+      "size": { "width": 600, "height": 500 },
+      "safeZone": false,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "starter_field",
+          "position": { "x": 50, "y": 250 }
+        },
+        {
+          "areaId": "dark_forest",
+          "position": { "x": 550, "y": 250 },
+          "requirement": "level_10"
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "slime",
+          "spawnPoints": [
+            { "x": 150, "y": 200 },
+            { "x": 300, "y": 150 }
+          ],
+          "maxCount": 4,
+          "respawnTime": 200
+        }
+      ],
+      "npcs": [
+        {
+          "npcId": "forest_ranger",
+          "position": { "x": 300, "y": 400 }
+        }
+      ],
+      "bgm": "forest_entrance",
+      "atmosphere": "짙은 나무들이 울창하게 자란 숲의 입구. 숲 깊은 곳에서 알 수 없는 소리가 들려온다."
+    },
+    "dark_forest": {
+      "id": "dark_forest",
+      "name": "어둠의 숲",
+      "description": "위험한 몬스터들이 서식하는 어두운 숲",
+      "type": "dungeon",
+      "requirements": {
+        "level": 10
+      },
+      "size": { "width": 1000, "height": 800 },
+      "safeZone": false,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "forest_entrance",
+          "position": { "x": 50, "y": 400 }
+        },
+        {
+          "areaId": "goblin_camp",
+          "position": { "x": 800, "y": 600 },
+          "requirement": "quest_forest_explore"
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "goblin",
+          "spawnPoints": [
+            { "x": 300, "y": 200 },
+            { "x": 500, "y": 300 },
+            { "x": 700, "y": 150 },
+            { "x": 400, "y": 600 }
+          ],
+          "maxCount": 6,
+          "respawnTime": 300
+        }
+      ],
+      "npcs": [],
+      "objects": [
+        {
+          "id": "dark_shrine",
+          "type": "shrine",
+          "position": { "x": 500, "y": 400 },
+          "interactive": true,
+          "requirements": "darkness_immunity"
+        },
+        {
+          "id": "treasure_chest_1",
+          "type": "chest",
+          "position": { "x": 800, "y": 200 },
+          "interactive": true,
+          "rewards": [
+            {
+              "itemId": "iron_sword",
+              "quantity": 1,
+              "chance": 30
+            },
+            {
+              "itemId": "gold_coin",
+              "quantity": 50,
+              "chance": 100
+            }
+          ]
+        }
+      ],
+      "environmentEffects": [
+        {
+          "type": "darkness",
+          "value": -10,
+          "description": "어둠으로 인해 명중률이 감소한다"
+        }
+      ],
+      "bgm": "dark_forest",
+      "atmosphere": "짙은 어둠이 드리워진 숲. 나뭇가지 사이로 스며드는 희미한 빛만이 길을 밝혀준다."
+    },
+    "goblin_camp": {
+      "id": "goblin_camp",
+      "name": "고블린 야영지",
+      "description": "고블린들이 모여 사는 위험한 야영지",
+      "type": "dungeon",
+      "requirements": {
+        "level": 8,
+        "completedQuests": ["forest_exploration"]
+      },
+      "size": { "width": 400, "height": 400 },
+      "safeZone": false,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "dark_forest",
+          "position": { "x": 50, "y": 200 }
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "goblin",
+          "spawnPoints": [
+            { "x": 200, "y": 100 },
+            { "x": 300, "y": 200 },
+            { "x": 150, "y": 300 },
+            { "x": 350, "y": 350 }
+          ],
+          "maxCount": 8,
+          "respawnTime": 250
+        }
+      ],
+      "npcs": [],
+      "objects": [
+        {
+          "id": "goblin_treasure",
+          "type": "chest",
+          "position": { "x": 200, "y": 200 },
+          "interactive": true,
+          "requirements": "clear_all_goblins",
+          "rewards": [
+            {
+              "itemId": "chainmail_armor",
+              "quantity": 1,
+              "chance": 40
+            },
+            {
+              "itemId": "goblin_ear",
+              "quantity": 5,
+              "chance": 100
+            }
+          ]
+        }
+      ],
+      "bgm": "danger_zone",
+      "atmosphere": "더러운 천막들과 불타는 모닥불들이 있는 고블린 야영지. 악취와 고블린들의 으르렁거리는 소리가 들린다."
+    },
+    "mountain_pass": {
+      "id": "mountain_pass",
+      "name": "산길",
+      "description": "험준한 산을 가로지르는 위험한 길",
+      "type": "field",
+      "requirements": {
+        "level": 15
+      },
+      "size": { "width": 1200, "height": 600 },
+      "safeZone": false,
+      "pvpEnabled": true,
+      "connections": [
+        {
+          "areaId": "goblin_camp",
+          "position": { "x": 100, "y": 300 }
+        },
+        {
+          "areaId": "orc_stronghold",
+          "position": { "x": 1100, "y": 300 },
+          "requirement": "guild_member"
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "orc_warrior",
+          "spawnPoints": [
+            { "x": 400, "y": 200 },
+            { "x": 800, "y": 150 },
+            { "x": 600, "y": 400 }
+          ],
+          "maxCount": 4,
+          "respawnTime": 600
+        }
+      ],
+      "npcs": [
+        {
+          "npcId": "mountain_hermit",
+          "position": { "x": 600, "y": 100 }
+        }
+      ],
+      "environmentEffects": [
+        {
+          "type": "altitude",
+          "value": -5,
+          "description": "높은 고도로 인해 이동속도가 감소한다"
+        }
+      ],
+      "bgm": "mountain_wind",
+      "atmosphere": "거센 바람이 불어오는 험준한 산길. 절벽 아래로 깊은 계곡이 보인다."
+    },
+    "dragon_lair": {
+      "id": "dragon_lair",
+      "name": "드래곤의 둥지",
+      "description": "고대 드래곤이 거주하는 전설의 동굴",
+      "type": "raid",
+      "requirements": {
+        "level": 40,
+        "guild": true,
+        "items": ["dragon_key"]
+      },
+      "size": { "width": 800, "height": 600 },
+      "safeZone": false,
+      "pvpEnabled": false,
+      "connections": [
+        {
+          "areaId": "mountain_pass",
+          "position": { "x": 400, "y": 550 }
+        }
+      ],
+      "monsterSpawns": [
+        {
+          "monsterId": "ancient_dragon",
+          "spawnPoints": [
+            { "x": 400, "y": 300 }
+          ],
+          "maxCount": 1,
+          "respawnTime": 259200
+        }
+      ],
+      "npcs": [],
+      "objects": [
+        {
+          "id": "dragon_hoard",
+          "type": "chest",
+          "position": { "x": 400, "y": 100 },
+          "interactive": true,
+          "requirements": "dragon_defeated",
+          "rewards": [
+            {
+              "itemId": "legendary_sword",
+              "quantity": 1,
+              "chance": 50
+            },
+            {
+              "itemId": "dragon_scale",
+              "quantity": 10,
+              "chance": 100
+            },
+            {
+              "itemId": "ancient_tome",
+              "quantity": 3,
+              "chance": 80
+            }
+          ]
+        }
+      ],
+      "environmentEffects": [
+        {
+          "type": "dragon_aura",
+          "value": -20,
+          "description": "드래곤의 위압감으로 인해 모든 능력이 감소한다"
+        }
+      ],
+      "bgm": "dragon_lair",
+      "atmosphere": "거대한 동굴 안에 용암이 흐르고, 곳곳에 보물들이 쌓여있다. 공기 중에 강력한 마력이 느껴진다."
+    }
+  },
+  "areaCategories": {
+    "safe_zones": {
+      "name": "안전 지역",
+      "description": "PvP가 금지되고 몬스터가 없는 안전한 지역들",
+      "areas": ["starter_town"]
+    },
+    "beginner_areas": {
+      "name": "초보자 지역",
+      "description": "낮은 레벨 플레이어를 위한 지역들",
+      "areas": ["starter_field", "forest_entrance"]
+    },
+    "intermediate_areas": {
+      "name": "중급자 지역",
+      "description": "중간 레벨 플레이어를 위한 지역들",
+      "areas": ["dark_forest", "goblin_camp"]
+    },
+    "advanced_areas": {
+      "name": "고급자 지역",
+      "description": "높은 레벨 플레이어를 위한 위험한 지역들",
+      "areas": ["mountain_pass", "orc_stronghold"]
+    },
+    "raid_areas": {
+      "name": "레이드 지역",
+      "description": "여러 플레이어가 협력해야 하는 특별한 지역들",
+      "areas": ["dragon_lair"]
+    }
+  }
+}

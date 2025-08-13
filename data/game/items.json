@@ -1,0 +1,401 @@
+{
+  "items": {
+    "health_potion": {
+      "id": "health_potion",
+      "name": "체력 물약",
+      "description": "HP를 즉시 회복시키는 물약",
+      "type": "consumable",
+      "subType": "potion",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 99,
+      "value": 50,
+      "consumableEffect": {
+        "type": "heal",
+        "value": 100
+      }
+    },
+    "mana_potion": {
+      "id": "mana_potion",
+      "name": "마나 물약",
+      "description": "MP를 즉시 회복시키는 물약",
+      "type": "consumable",
+      "subType": "potion",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 99,
+      "value": 60,
+      "consumableEffect": {
+        "type": "mana",
+        "value": 80
+      }
+    },
+    "strength_potion": {
+      "id": "strength_potion",
+      "name": "힘 물약",
+      "description": "일정 시간 동안 힘을 증가시키는 물약",
+      "type": "consumable",
+      "subType": "buff_potion",
+      "rarity": "uncommon",
+      "level": 5,
+      "stackable": true,
+      "maxStack": 20,
+      "value": 200,
+      "consumableEffect": {
+        "type": "buff",
+        "value": 10,
+        "duration": 300
+      }
+    },
+    "iron_sword": {
+      "id": "iron_sword",
+      "name": "철검",
+      "description": "튼튼한 철로 만든 기본적인 검",
+      "type": "weapon",
+      "subType": "sword",
+      "rarity": "common",
+      "level": 5,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 500,
+      "equipmentSlot": "weapon",
+      "statBonus": {
+        "str": 8,
+        "atk": 25
+      },
+      "durability": {
+        "current": 100,
+        "max": 100
+      },
+      "requirements": {
+        "level": 5,
+        "stats": {
+          "str": 15
+        }
+      }
+    },
+    "legendary_sword": {
+      "id": "legendary_sword", 
+      "name": "전설의 검",
+      "description": "고대 영웅이 사용했던 전설적인 검",
+      "type": "weapon",
+      "subType": "sword",
+      "rarity": "legendary",
+      "level": 40,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50000,
+      "equipmentSlot": "weapon",
+      "statBonus": {
+        "str": 50,
+        "dex": 20,
+        "atk": 180,
+        "crit": 15
+      },
+      "effects": [
+        {
+          "type": "damage",
+          "target": "enemy",
+          "value": 50,
+          "chance": 20
+        }
+      ],
+      "durability": {
+        "current": 500,
+        "max": 500
+      },
+      "requirements": {
+        "level": 40,
+        "stats": {
+          "str": 80
+        }
+      }
+    },
+    "leather_helmet": {
+      "id": "leather_helmet",
+      "name": "가죽 투구",
+      "description": "부드러운 가죽으로 만든 기본 투구",
+      "type": "armor",
+      "subType": "helmet",
+      "rarity": "common",
+      "level": 1,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 80,
+      "equipmentSlot": "helmet",
+      "statBonus": {
+        "vit": 3,
+        "def": 5
+      },
+      "durability": {
+        "current": 50,
+        "max": 50
+      }
+    },
+    "iron_armor": {
+      "id": "iron_armor",
+      "name": "철갑옷",
+      "description": "견고한 철로 만든 중급 갑옷",
+      "type": "armor",
+      "subType": "chest",
+      "rarity": "uncommon",
+      "level": 8,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 800,
+      "equipmentSlot": "armor",
+      "statBonus": {
+        "vit": 12,
+        "def": 20
+      },
+      "durability": {
+        "current": 120,
+        "max": 120
+      },
+      "requirements": {
+        "level": 8,
+        "stats": {
+          "vit": 20
+        }
+      }
+    },
+    "chainmail_armor": {
+      "id": "chainmail_armor",
+      "name": "사슬갑옷",
+      "description": "철사슬로 엮어 만든 유연한 갑옷",
+      "type": "armor",
+      "subType": "chest",
+      "rarity": "uncommon",
+      "level": 12,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 1200,
+      "equipmentSlot": "armor",
+      "statBonus": {
+        "vit": 15,
+        "dex": 5,
+        "def": 25,
+        "eva": 3
+      },
+      "durability": {
+        "current": 150,
+        "max": 150
+      },
+      "requirements": {
+        "level": 12,
+        "stats": {
+          "vit": 25
+        }
+      }
+    },
+    "bronze_ring": {
+      "id": "bronze_ring",
+      "name": "청동 반지",
+      "description": "간단한 청동으로 만든 반지",
+      "type": "accessory",
+      "subType": "ring",
+      "rarity": "common",
+      "level": 3,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 150,
+      "equipmentSlot": "ring",
+      "statBonus": {
+        "luk": 2
+      }
+    },
+    "slime_gel": {
+      "id": "slime_gel",
+      "name": "슬라임 젤",
+      "description": "슬라임에서 나온 끈적한 젤",
+      "type": "material",
+      "subType": "monster_drop",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 99,
+      "value": 10
+    },
+    "goblin_ear": {
+      "id": "goblin_ear",
+      "name": "고블린 귀",
+      "description": "고블린의 뾰족한 귀",
+      "type": "material",
+      "subType": "monster_drop",
+      "rarity": "common",
+      "level": 5,
+      "stackable": true,
+      "maxStack": 50,
+      "value": 25
+    },
+    "orc_tusk": {
+      "id": "orc_tusk",
+      "name": "오크 엄니",
+      "description": "오크의 크고 날카로운 엄니",
+      "type": "material",
+      "subType": "monster_drop",
+      "rarity": "uncommon",
+      "level": 15,
+      "stackable": true,
+      "maxStack": 20,
+      "value": 100
+    },
+    "dragon_scale": {
+      "id": "dragon_scale",
+      "name": "드래곤 비늘",
+      "description": "고대 드래곤의 강력한 비늘",
+      "type": "material",
+      "subType": "rare_drop",
+      "rarity": "legendary",
+      "level": 50,
+      "stackable": true,
+      "maxStack": 10,
+      "value": 5000
+    },
+    "dragon_heart": {
+      "id": "dragon_heart",
+      "name": "드래곤 하트",
+      "description": "드래곤의 심장, 강력한 마력이 깃들어 있다",
+      "type": "material",
+      "subType": "epic_material",
+      "rarity": "mythic",
+      "level": 50,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 100000
+    },
+    "iron_ore": {
+      "id": "iron_ore",
+      "name": "철광석",
+      "description": "제련용 철 원석",
+      "type": "material",
+      "subType": "ore",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 99,
+      "value": 30
+    },
+    "leather_scrap": {
+      "id": "leather_scrap",
+      "name": "가죽 조각",
+      "description": "제작에 사용할 수 있는 가죽 조각",
+      "type": "material",
+      "subType": "crafting",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 99,
+      "value": 15
+    },
+    "ancient_tome": {
+      "id": "ancient_tome",
+      "name": "고대 마법서",
+      "description": "고대의 지식이 담긴 신비한 마법서",
+      "type": "misc",
+      "subType": "book",
+      "rarity": "epic",
+      "level": 30,
+      "stackable": true,
+      "maxStack": 5,
+      "value": 2000
+    },
+    "small_coin": {
+      "id": "small_coin",
+      "name": "작은 주화",
+      "description": "약간의 가치가 있는 작은 주화",
+      "type": "misc",
+      "subType": "currency",
+      "rarity": "common",
+      "level": 1,
+      "stackable": true,
+      "maxStack": 999,
+      "value": 5
+    },
+    "rusty_dagger": {
+      "id": "rusty_dagger",
+      "name": "녹슨 단검",
+      "description": "녹이 슨 낡은 단검",
+      "type": "weapon",
+      "subType": "dagger",
+      "rarity": "common",
+      "level": 1,
+      "stackable": false,
+      "maxStack": 1,
+      "value": 50,
+      "equipmentSlot": "weapon",
+      "statBonus": {
+        "dex": 2,
+        "atk": 8
+      },
+      "durability": {
+        "current": 20,
+        "max": 30
+      }
+    },
+    "meteor_stone": {
+      "id": "meteor_stone",
+      "name": "운석 조각",
+      "description": "하늘에서 떨어진 신비한 운석 조각",
+      "type": "material",
+      "subType": "epic_material",
+      "rarity": "epic",
+      "level": 25,
+      "stackable": true,
+      "maxStack": 5,
+      "value": 1000
+    }
+  },
+  "itemCategories": {
+    "consumables": {
+      "name": "소모품",
+      "description": "사용하면 효과를 발휘하는 아이템들",
+      "items": ["health_potion", "mana_potion", "strength_potion"]
+    },
+    "weapons": {
+      "name": "무기",
+      "description": "전투에 사용하는 무기들",
+      "items": ["iron_sword", "legendary_sword", "rusty_dagger"]
+    },
+    "armor": {
+      "name": "방어구",
+      "description": "몸을 보호하는 방어구들",
+      "items": ["leather_helmet", "iron_armor", "chainmail_armor"]
+    },
+    "accessories": {
+      "name": "액세서리",
+      "description": "추가 능력을 부여하는 장신구들",
+      "items": ["bronze_ring"]
+    },
+    "materials": {
+      "name": "재료",
+      "description": "제작이나 퀘스트에 사용되는 재료들",
+      "items": ["slime_gel", "goblin_ear", "orc_tusk", "dragon_scale", "dragon_heart", "iron_ore", "leather_scrap", "meteor_stone"]
+    },
+    "misc": {
+      "name": "기타",
+      "description": "기타 아이템들",
+      "items": ["ancient_tome", "small_coin"]
+    }
+  },
+  "craftingRecipes": {
+    "iron_sword_craft": {
+      "resultItem": "iron_sword",
+      "materials": [
+        {
+          "itemId": "iron_ore",
+          "quantity": 5
+        },
+        {
+          "itemId": "leather_scrap",
+          "quantity": 2
+        }
+      ],
+      "requiredSkill": "blacksmithing",
+      "requiredLevel": 5,
+      "cost": 200
+    }
+  }
+}

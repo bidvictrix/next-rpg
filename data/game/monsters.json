@@ -1,0 +1,308 @@
+{
+  "monsters": {
+    "slime": {
+      "id": "slime",
+      "name": "슬라임",
+      "description": "젤리같은 몸을 가진 약한 몬스터",
+      "type": "normal",
+      "level": 1,
+      "stats": {
+        "str": 5,
+        "dex": 8,
+        "int": 3,
+        "vit": 10,
+        "luk": 5,
+        "hp": 25,
+        "mp": 10,
+        "atk": 8,
+        "def": 3,
+        "acc": 12,
+        "eva": 10,
+        "crit": 5
+      },
+      "skills": [],
+      "ai": {
+        "type": "passive",
+        "attackRange": 1,
+        "detectionRange": 3,
+        "moveSpeed": 0.5,
+        "skills": []
+      },
+      "dropTable": {
+        "items": [
+          {
+            "itemId": "slime_gel",
+            "quantity": { "min": 1, "max": 2 },
+            "chance": 80
+          },
+          {
+            "itemId": "small_coin",
+            "quantity": { "min": 1, "max": 3 },
+            "chance": 60
+          }
+        ],
+        "gold": { "min": 5, "max": 15 },
+        "experience": 10
+      },
+      "spawnAreas": ["starter_field", "forest_entrance"],
+      "spawnRate": 80,
+      "spawnLimit": 10,
+      "respawnTime": 180,
+      "size": "small",
+      "appearance": "투명한 젤리 같은 둥근 모습으로 천천히 움직인다"
+    },
+    "goblin": {
+      "id": "goblin",
+      "name": "고블린",
+      "description": "작고 사악한 인간형 몬스터",
+      "type": "normal",
+      "level": 5,
+      "stats": {
+        "str": 15,
+        "dex": 12,
+        "int": 8,
+        "vit": 18,
+        "luk": 10,
+        "hp": 65,
+        "mp": 25,
+        "atk": 22,
+        "def": 8,
+        "acc": 18,
+        "eva": 14,
+        "crit": 12
+      },
+      "skills": ["basic_slash"],
+      "ai": {
+        "type": "aggressive",
+        "attackRange": 1,
+        "detectionRange": 5,
+        "moveSpeed": 1.2,
+        "skills": [
+          {
+            "skillId": "basic_slash",
+            "priority": 1,
+            "cooldown": 2,
+            "condition": "enemy_in_range"
+          }
+        ]
+      },
+      "dropTable": {
+        "items": [
+          {
+            "itemId": "goblin_ear",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 40
+          },
+          {
+            "itemId": "rusty_dagger",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 15
+          },
+          {
+            "itemId": "leather_scrap",
+            "quantity": { "min": 1, "max": 3 },
+            "chance": 70
+          }
+        ],
+        "gold": { "min": 15, "max": 35 },
+        "experience": 50
+      },
+      "spawnAreas": ["goblin_camp", "dark_forest"],
+      "spawnRate": 60,
+      "spawnLimit": 8,
+      "respawnTime": 300,
+      "size": "small",
+      "appearance": "작은 키에 초록색 피부를 가진 못생긴 인간형 몬스터, 날카로운 이빨과 빨간 눈이 특징"
+    },
+    "orc_warrior": {
+      "id": "orc_warrior",
+      "name": "오크 전사",
+      "description": "강력한 근력을 가진 중급 몬스터",
+      "type": "elite",
+      "level": 15,
+      "stats": {
+        "str": 35,
+        "dex": 18,
+        "int": 12,
+        "vit": 40,
+        "luk": 15,
+        "hp": 250,
+        "mp": 60,
+        "atk": 58,
+        "def": 25,
+        "acc": 25,
+        "eva": 18,
+        "crit": 20
+      },
+      "skills": ["power_strike", "war_cry"],
+      "ai": {
+        "type": "aggressive",
+        "attackRange": 2,
+        "detectionRange": 6,
+        "moveSpeed": 1.0,
+        "skills": [
+          {
+            "skillId": "power_strike",
+            "priority": 2,
+            "cooldown": 5,
+            "condition": "hp > 50%"
+          },
+          {
+            "skillId": "war_cry",
+            "priority": 1,
+            "cooldown": 15,
+            "condition": "combat_start"
+          }
+        ]
+      },
+      "dropTable": {
+        "items": [
+          {
+            "itemId": "orc_tusk",
+            "quantity": { "min": 1, "max": 2 },
+            "chance": 60
+          },
+          {
+            "itemId": "iron_sword",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 25
+          },
+          {
+            "itemId": "chainmail_armor",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 20
+          },
+          {
+            "itemId": "strength_potion",
+            "quantity": { "min": 1, "max": 2 },
+            "chance": 30
+          }
+        ],
+        "gold": { "min": 80, "max": 150 },
+        "experience": 180
+      },
+      "spawnAreas": ["orc_stronghold", "mountain_pass"],
+      "spawnRate": 30,
+      "spawnLimit": 3,
+      "respawnTime": 600,
+      "resistances": {
+        "physical": 10,
+        "fire": -10
+      },
+      "size": "large",
+      "appearance": "근육질의 거대한 몸집과 돼지 같은 얼굴을 가진 전사, 큰 도끼나 칼을 들고 있다"
+    },
+    "ancient_dragon": {
+      "id": "ancient_dragon",
+      "name": "고대 드래곤",
+      "description": "전설적인 힘을 가진 고대의 용",
+      "type": "raid_boss",
+      "level": 50,
+      "stats": {
+        "str": 100,
+        "dex": 60,
+        "int": 150,
+        "vit": 200,
+        "luk": 80,
+        "hp": 15000,
+        "mp": 3000,
+        "atk": 350,
+        "def": 120,
+        "acc": 85,
+        "eva": 45,
+        "crit": 60
+      },
+      "skills": ["dragon_breath", "meteor", "tail_sweep", "dragon_roar"],
+      "ai": {
+        "type": "smart",
+        "attackRange": 5,
+        "detectionRange": 15,
+        "moveSpeed": 2.0,
+        "skills": [
+          {
+            "skillId": "dragon_breath",
+            "priority": 3,
+            "cooldown": 8,
+            "condition": "multiple_enemies"
+          },
+          {
+            "skillId": "meteor",
+            "priority": 2,
+            "cooldown": 20,
+            "condition": "hp < 30%"
+          },
+          {
+            "skillId": "tail_sweep",
+            "priority": 2,
+            "cooldown": 6,
+            "condition": "enemy_close"
+          },
+          {
+            "skillId": "dragon_roar",
+            "priority": 1,
+            "cooldown": 30,
+            "condition": "combat_start"
+          }
+        ]
+      },
+      "dropTable": {
+        "items": [
+          {
+            "itemId": "dragon_scale",
+            "quantity": { "min": 5, "max": 10 },
+            "chance": 100
+          },
+          {
+            "itemId": "dragon_heart",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 100
+          },
+          {
+            "itemId": "legendary_sword",
+            "quantity": { "min": 1, "max": 1 },
+            "chance": 30
+          },
+          {
+            "itemId": "ancient_tome",
+            "quantity": { "min": 1, "max": 2 },
+            "chance": 50
+          }
+        ],
+        "gold": { "min": 5000, "max": 10000 },
+        "experience": 25000
+      },
+      "spawnAreas": ["dragon_lair"],
+      "spawnRate": 1,
+      "spawnLimit": 1,
+      "respawnTime": 259200,
+      "resistances": {
+        "physical": 30,
+        "fire": 80,
+        "ice": -20,
+        "lightning": 10,
+        "poison": 100
+      },
+      "immunities": ["stun", "sleep", "charm"],
+      "questTarget": true,
+      "size": "huge",
+      "appearance": "거대한 날개와 비늘로 덮인 몸, 타오르는 듯한 눈과 날카로운 발톱을 가진 전설의 용"
+    }
+  },
+  "monsterCategories": {
+    "slimes": {
+      "name": "슬라임 계열",
+      "description": "젤리 같은 몸을 가진 몬스터들",
+      "monsters": ["slime"]
+    },
+    "humanoids": {
+      "name": "인간형 몬스터",
+      "description": "인간과 비슷한 형태의 몬스터들",
+      "monsters": ["goblin", "orc_warrior"]
+    },
+    "dragons": {
+      "name": "드래곤 계열",
+      "description": "전설적인 힘을 가진 용족",
+      "monsters": ["ancient_dragon"]
+    }
+  }
+}

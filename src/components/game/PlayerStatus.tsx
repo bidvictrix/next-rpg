@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
-import { Progress, StatProgress, CircularProgress } from '../ui/Progress';
+import { StatProgress, CircularProgress } from '../ui/Progress';
 import { Modal, useModal } from '../ui/Modal';
 
 // 플레이어 기본 정보
@@ -250,7 +250,7 @@ const StatAllocationModal: React.FC<{
                 <div className="flex items-center gap-2">
                   <span className="font-medium uppercase">{stat}</span>
                   <span className="text-gray-600">
-                    ({(stats as unknown as Record<string, number>)[stat]} → {(stats as unknown as Record<string, number>)[stat] + points})
+                    ({stats[stat as BasicStatKey]} → {stats[stat as BasicStatKey] + points})
                   </span>
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
@@ -314,8 +314,8 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
   const { isOpen, openModal, closeModal } = useModal();
   
   const expPercentage = (player.experience / player.experienceToNext) * 100;
-  const hpPercentage = (stats.hp / stats.maxHp) * 100;
-  const mpPercentage = (stats.mp / stats.maxMp) * 100;
+  const hpPercentage = (stats.maxHp > 0 ? (stats.hp / stats.maxHp) * 100 : 0);
+  const mpPercentage = (stats.maxMp > 0 ? (stats.mp / stats.maxMp) * 100 : 0);
 
   const classGradient = classColors[player.class as keyof typeof classColors] || classColors.warrior;
 
@@ -349,7 +349,6 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
                 statIcon="❤️"
                 current={stats.hp}
                 maximum={stats.maxHp}
-                variant="hp"
                 compact
               />
               <StatProgress
@@ -357,7 +356,6 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
                 statIcon="💙"
                 current={stats.mp}
                 maximum={stats.maxMp}
-                variant="mp"
                 compact
               />
             </div>
@@ -418,7 +416,6 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
             statIcon="❤️"
             current={stats.hp}
             maximum={stats.maxHp}
-            variant="hp"
             glowing={hpPercentage < 25}
           />
           
@@ -427,7 +424,6 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
             statIcon="💙"
             current={stats.mp}
             maximum={stats.maxMp}
-            variant="mp"
           />
           
           <StatProgress
@@ -435,7 +431,6 @@ export const PlayerStatus: React.FC<PlayerStatusProps> = ({
             statIcon="⭐"
             current={player.experience}
             maximum={player.experienceToNext}
-            variant="exp"
             animated
             striped
           />

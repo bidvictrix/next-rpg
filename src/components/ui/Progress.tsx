@@ -48,7 +48,7 @@ export interface ProgressProps {
 }
 
 // 스탯 프로그레스 Props
-export interface StatProgressProps extends Omit<ProgressProps, 'variant'> {
+export interface StatProgressProps extends Omit<ProgressProps, 'variant' | 'value' | 'max'> {
   statName: string;
   statIcon?: React.ReactNode;
   current: number;

@@ -1,4 +1,5 @@
-import { Player, Stats } from '@/types/player';
+import { Player } from '@/types/player';
+import { Stats } from '@/types/game';
 import { LogCategory } from './logger';
 import { logger } from './logger';
 
@@ -86,6 +87,10 @@ export class StatSystem {
   private statSynergies: StatSynergy[] = [];
   private statBuilds: StatBuild[] = [];
   private statPointsPerLevel: number = 5;
+  // 안전한 스탯 갱신용 유틸(동적 키 할당 시 TS 인덱싱 경고 방지)
+  private setStatValue(target: Stats, key: keyof Stats, value: number): void {
+    (target as unknown as Record<string, number>)[key as string] = value;
+  }
 
   constructor() {
     this.initializeStatCaps();
@@ -263,7 +268,7 @@ export class StatSystem {
       const value = Number(points) || 0;
       if (value > 0) {
         const current = (newStats[key] as number | undefined) ?? 0;
-        (newStats as Record<string, number>)[key as string] = current + value;
+        this.setStatValue(newStats, key, current + value);
       }
     });
 
@@ -296,12 +301,12 @@ export class StatSystem {
       if (currentValue > cap.softCap) {
         const excess = currentValue - cap.softCap;
         const diminishedExcess = excess * cap.diminishingReturn;
-        (cappedStats as Record<string, number>)[key as string] = cap.softCap + diminishedExcess;
+        this.setStatValue(cappedStats, key, cap.softCap + diminishedExcess);
       }
       
       // 하드 캡 적용 (무한대가 아닌 경우)
       if (cap.hardCap !== Infinity && currentValue > cap.hardCap) {
-        (cappedStats as Record<string, number>)[key as string] = cap.hardCap;
+        this.setStatValue(cappedStats, key, cap.hardCap);
       }
     });
 
@@ -530,7 +535,7 @@ export class StatSystem {
       if (points) {
         const key = stat as keyof Stats;
         const current = (tempPlayer.stats[key] as number | undefined) ?? 0;
-        (tempPlayer.stats as Record<string, number>)[key as string] = current + (Number(points) || 0);
+        this.setStatValue(tempPlayer.stats, key, current + (Number(points) || 0));
       }
     });
 
@@ -594,14 +599,15 @@ export class StatSystem {
   }
 
   private getBaseStatsForLevel(level: number): Stats {
+    const basePrimary = { str: 10, dex: 10, int: 10, vit: 10, luk: 10 };
+    const hp = 100 + (level - 1) * 10;
+    const mp = 50 + (level - 1) * 5;
+    const def = Math.round(basePrimary.vit * 1.5 + (level - 1) * 1.5);
     return {
-      hp: 100 + (level - 1) * 10,
-      mp: 50 + (level - 1) * 5,
-      str: 10,
-      dex: 10,
-      int: 10,
-      vit: 10,
-      luk: 10
+      ...basePrimary,
+      hp,
+      mp,
+      def
     };
   }
 

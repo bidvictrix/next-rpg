@@ -394,8 +394,12 @@ export class PlayerManager {
     const stats = player.stats;
 
     // 파생 스탯 계산
-    stats.hp = stats.vit * 10 + level * 5;
-    stats.mp = stats.int * 10 + level * 3;
+    const calcHp = stats.vit * 10 + level * 5;
+    const calcMp = stats.int * 10 + level * 3;
+    stats.hp = calcHp;
+    stats.maxHp = calcHp;
+    stats.mp = calcMp;
+    stats.maxMp = calcMp;
     stats.atk = stats.str * 2; // 장비 공격력은 별도 계산
     stats.def = stats.vit * 1.5; // 장비 방어력은 별도 계산
     stats.acc = stats.dex * 0.8 + level;

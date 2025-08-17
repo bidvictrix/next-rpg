@@ -1631,11 +1631,10 @@ export class BossRaidSystem {
       await this.applyPhaseEffect(raid, effect);
     }
 
-    // 스탯 수정자 적용
-    Object.entries(phase.statModifiers).forEach(([stat, modifier]) => {
-      const statsRecord = raid.boss.stats as unknown as Record<string, number>;
-      const currentValue = statsRecord[stat] || 0;
-      statsRecord[stat] = Math.floor(currentValue * (modifier / 100));
+    // 스탯 수정자 적용 (타입 안전)
+    (Object.entries(phase.statModifiers) as Array<[keyof typeof raid.boss.stats, number]>).forEach(([stat, modifier]) => {
+      const currentValue = (raid.boss.stats[stat] as number | undefined) ?? 0;
+      (raid.boss.stats as unknown as Record<string, number>)[stat as string] = Math.floor(currentValue * (modifier / 100));
     });
 
     // 페이즈 전환 복구 처리

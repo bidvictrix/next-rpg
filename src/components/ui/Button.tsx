@@ -359,7 +359,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const buttonContent = (
       <button
         ref={ref}
-        className={cn(buttonClasses, className, { 'relative': cooldown })}
+        className={cn(buttonClasses, className, (cooldown ? 'relative' : undefined))}
         disabled={disabled || loading || isOnCooldown}
         onClick={handleClick}
         {...props}

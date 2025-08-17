@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal, useModal } from '@/components/ui/Modal';
-import { Progress } from '@/components/ui/Progress';
+// Progress 미사용 제거
 import { cn } from '@/lib/utils';
 import { Monster } from '@/types/game';
 

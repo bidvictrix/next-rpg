@@ -441,7 +441,8 @@ export class SkillTreeSystem {
     // 스탯 요구사항 확인
     if (evolution.requirements.stats) {
       for (const [stat, required] of Object.entries(evolution.requirements.stats)) {
-        if ((player.stats as unknown as Record<string, number>)[stat] < required) {
+        const current = (player.stats as unknown as Record<string, number>)[stat] ?? 0;
+        if (current < required) {
           return {
             success: false,
             evolvedSkill: '',
@@ -739,8 +740,9 @@ export const skillUtils = {
     let baseDamage = skill.baseDamage || 0;
     let scalingStats = skill.scaling || {};
     
-    Object.entries(scalingStats).forEach(([stat, ratio]: [string, number]) => {
-      baseDamage += (playerStats as unknown as Record<string, number>)[stat] * ratio;
+    (Object.entries(scalingStats) as Array<[keyof Stats & string, number]>).forEach(([stat, ratio]) => {
+      const value = (playerStats as unknown as Record<string, number>)[stat] ?? 0;
+      baseDamage += value * ratio;
     });
 
     return Math.floor(baseDamage * (1 + skill.level * 0.1)); // 레벨당 10% 증가

@@ -1,21 +1,6 @@
-// 기본 스탯 인터페이스
-export interface Stats {
-  str: number;    // 힘 (공격력, 장비 요구사항)
-  dex: number;    // 민첩 (명중률, 회피율, 크리티컬)
-  int: number;    // 지능 (마법력, MP, 스킬 데미지)
-  vit: number;    // 체력 (HP, 방어력, HP 회복)
-  luk: number;    // 운 (크리티컬, 드롭률, 회피)
-  // 파생 스탯 (계산으로 구함)
-  hp?: number;    // 체력 = vit * 10 + level * 5
-  maxHp?: number;
-  mp?: number;    // 마나 = int * 10 + level * 3
-  maxMp?: number;
-  atk?: number;   // 공격력 = str * 2 + 장비 공격력
-  def?: number;   // 방어력 = vit * 1.5 + 장비 방어력
-  acc?: number;   // 명중률 = dex * 0.8 + level
-  eva?: number;   // 회피율 = dex * 0.6 + luk * 0.2
-  crit?: number;  // 크리티컬 = dex * 0.3 + luk * 0.7
-}
+// 게임 공용 스탯 타입을 재사용하여 전역 일관성 확보
+import type { Stats as CoreStats } from '@/types/game';
+export type Stats = CoreStats;
 
 // 레벨 및 경험치 시스템
 export interface LevelSystem {
@@ -152,13 +137,24 @@ export const createDefaultPlayer = (
       statPoints: 5,
       skillPoints: 1
     },
-    stats: {
-      str: 10,
-      dex: 10,
-      int: 10,
-      vit: 10,
-      luk: 10
-    },
+    stats: (() => {
+      const base = { str: 10, dex: 10, int: 10, vit: 10, luk: 10 };
+      const hp = base.vit * 10 + 1 * 5;
+      const mp = base.int * 10 + 1 * 3;
+      const def = Math.round(base.vit * 1.5);
+      return {
+        ...base,
+        hp,
+        maxHp: hp,
+        mp,
+        maxMp: mp,
+        def,
+        atk: base.str * 2,
+        acc: Math.round(base.dex * 0.8 + 1),
+        eva: Math.round(base.dex * 0.6 + base.luk * 0.2),
+        crit: Math.round(base.dex * 0.3 + base.luk * 0.7)
+      };
+    })(),
     equipment: {},
     inventory: [],
     inventorySize: 20,
